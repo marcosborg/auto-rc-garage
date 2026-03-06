@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Auto RC Garage</string>
+    <string name="title_activity_main">Auto RC Garage</string>
+    <string name="package_name">auto.rc.garage</string>
+    <string name="custom_url_scheme">auto.rc.garage</string>
+</resources>

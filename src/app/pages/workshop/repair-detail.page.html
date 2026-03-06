@@ -1,0 +1,314 @@
+﻿<ion-content class="detail-content" *ngIf="!loading && repair as r">
+  <ion-card class="hero-card">
+    <ion-card-header>
+      <ion-card-title>{{ r.vehicle.license || r.vehicle.foreign_license }} - {{ r.vehicle.brand }} {{ r.vehicle.model }}</ion-card-title>
+      <ion-card-subtitle>Intervencao #{{ r.id }} - {{ r.repair_state }}</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="chips">
+        <ion-badge color="primary">Checklist: {{ checklistPercentLabel }}</ion-badge>
+        <ion-badge color="warning">Mao de obra: {{ formatMinutes(r.work_total_minutes) }}</ion-badge>
+        <ion-badge color="tertiary">Pecas: {{ r.parts_total | number:'1.2-2' }} EUR</ion-badge>
+      </div>
+      <ion-progress-bar [value]="checklistProgress"></ion-progress-bar>
+
+      <div class="control-card">
+        <div><strong>Inicio:</strong> {{ formatDateTime(r.repair_started_at) }}</div>
+        <div><strong>Fim:</strong> {{ formatDateTime(r.repair_finished_at) }}</div>
+        <div><strong>Duracao:</strong> {{ formatMinutes(r.repair_duration_minutes) }}</div>
+        <div><strong>Total mecanicos:</strong> {{ formatMinutes(r.work_total_minutes) }}</div>
+      </div>
+
+      <div class="action-grid">
+        <ion-button size="small" (click)="runAction('startRepair')" [disabled]="submitting">Iniciar reparacao</ion-button>
+        <ion-button size="small" color="success" (click)="runAction('finishRepair')" [disabled]="submitting">Finalizar reparacao</ion-button>
+        <ion-button size="small" color="medium" (click)="runAction('startMyWork')" [disabled]="submitting">Iniciar meu trabalho</ion-button>
+        <ion-button size="small" color="dark" (click)="runAction('finishMyWork')" [disabled]="submitting">Terminar meu trabalho</ion-button>
+      </div>
+
+      <ion-button
+        *ngIf="r.can_create_new_intervention"
+        expand="block"
+        fill="outline"
+        color="success"
+        [disabled]="submitting"
+        (click)="createNewIntervention(r.vehicle.id)"
+      >
+        Nova intervencao desta viatura
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-segment [(ngModel)]="section" class="section-segment" scrollable>
+    <ion-segment-button value="overview">
+      <ion-label>Resumo</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="checklist">
+      <ion-label>Checklist</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="media">
+      <ion-label>Fotos</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="parts">
+      <ion-label>Pecas</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="history">
+      <ion-label>Historico</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <ng-container [ngSwitch]="section">
+    <ion-card *ngSwitchCase="'overview'">
+      <ion-card-header>
+        <ion-card-title>Resumo tecnico</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="vehicle-grid">
+          <div><strong>Estado:</strong> {{ r.vehicle.general_state || '-' }}</div>
+          <div><strong>Versao:</strong> {{ r.vehicle.version || '-' }}</div>
+          <div><strong>Ano/Mes:</strong> {{ r.vehicle.year || '-' }}/{{ r.vehicle.month || '-' }}</div>
+          <div><strong>Combustivel:</strong> {{ r.vehicle.fuel || '-' }}</div>
+          <div><strong>Cor:</strong> {{ r.vehicle.color || '-' }}</div>
+          <div><strong>Kms viatura:</strong> {{ r.vehicle.kilometers ?? '-' }}</div>
+          <div><strong>Inspecao:</strong> {{ r.vehicle.inspec_b || '-' }}</div>
+        </div>
+
+        <ion-item>
+          <ion-label position="stacked">Assinatura</ion-label>
+          <ion-input [(ngModel)]="form.name"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Kms na entrada</ion-label>
+          <ion-input type="number" [(ngModel)]="form.kilometers"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Observacoes de entrada</ion-label>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.obs_1"></ion-textarea>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Data/hora da intervencao</ion-label>
+          <ion-input type="datetime-local" [(ngModel)]="form.timestamp"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Estado da intervencao</ion-label>
+          <ion-select interface="popover" [(ngModel)]="form.repair_state_id">
+            <ion-select-option [value]="null">Sem estado</ion-select-option>
+            <ion-select-option *ngFor="let state of states" [value]="state.id">{{ state.name }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Previsao de conclusao</ion-label>
+          <ion-input type="date" [(ngModel)]="form.expected_completion_date"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Descritivo do que foi feito</ion-label>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.work_performed"></ion-textarea>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Materiais usados</ion-label>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.materials_used"></ion-textarea>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Observacoes</ion-label>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.obs_2"></ion-textarea>
+        </ion-item>
+
+        <ion-button expand="block" (click)="saveAll()" [disabled]="submitting">Guardar alteracoes</ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngSwitchCase="'checklist'">
+      <ion-card-header>
+        <ion-card-title>Checklist inteligente</ion-card-title>
+        <ion-card-subtitle>Organizado por area para acelerar o fluxo do mecanico</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-accordion-group multiple="true" value="Exterior">
+          <ion-accordion *ngFor="let group of checklistGroups" [value]="group.name">
+            <ion-item slot="header">
+              <ion-label>{{ group.name }}</ion-label>
+            </ion-item>
+            <div slot="content" class="checklist-group">
+              <div class="check-item" *ngFor="let item of group.items; trackBy: trackByChecklist">
+                <div class="check-head">
+                  <ion-checkbox [(ngModel)]="item.checked"></ion-checkbox>
+                  <div class="check-label">{{ item.label }}</div>
+                </div>
+                <ion-item lines="none">
+                  <ion-label position="stacked">Nota</ion-label>
+                  <ion-textarea autoGrow="true" [(ngModel)]="item.note"></ion-textarea>
+                </ion-item>
+              </div>
+            </div>
+          </ion-accordion>
+        </ion-accordion-group>
+
+        <ion-button expand="block" (click)="saveAll()" [disabled]="submitting">Guardar checklist</ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngSwitchCase="'media'">
+      <ion-card-header>
+        <ion-card-title>Fotos e evidencias</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <h3>Fotos iniciais da viatura</h3>
+        <div class="photo-grid photo-grid-large" *ngIf="r.vehicle.initial_photos.length; else emptyInitialPhotos">
+          <button
+            type="button"
+            class="photo-card"
+            *ngFor="let photo of r.vehicle.initial_photos; let i = index; trackBy: trackByMedia"
+            (click)="openGallery(r.vehicle.initial_photos, i, 'Fotos iniciais')"
+          >
+            <img [src]="photo.url || photo.thumb" [alt]="'Foto inicial ' + (i + 1)">
+          </button>
+        </div>
+        <ng-template #emptyInitialPhotos>
+          <div class="empty-state">Sem fotos iniciais da viatura.</div>
+        </ng-template>
+
+        <h3>Check-in</h3>
+        <div class="row-actions">
+          <ion-button size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkin')">Adicionar ficheiros check-in</ion-button>
+        </div>
+        <input #checkinCameraPicker type="file" accept="image/*" capture="environment" hidden (change)="onSelectMedia($event, 'checkin')">
+        <input #checkinPicker type="file" accept="image/*" multiple hidden (change)="onSelectMedia($event, 'checkin')">
+        <div class="photo-grid photo-grid-large" *ngIf="r.checkin_photos.length; else emptyCheckinPhotos">
+          <div class="photo-item" *ngFor="let photo of r.checkin_photos; let i = index; trackBy: trackByMedia">
+            <button type="button" class="photo-card" (click)="openGallery(r.checkin_photos, i, 'Check-in')">
+              <img [src]="photo.url || photo.thumb" [alt]="'Check-in ' + (i + 1)">
+            </button>
+            <ion-button size="small" color="danger" fill="clear" (click)="removeMedia(photo.id)">Remover</ion-button>
+          </div>
+        </div>
+        <ng-template #emptyCheckinPhotos>
+          <div class="empty-state">Sem ficheiros de check-in.</div>
+        </ng-template>
+
+        <h3>Check-out</h3>
+        <div class="row-actions">
+          <ion-button size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkout')">Adicionar ficheiros check-out</ion-button>
+        </div>
+        <input #checkoutCameraPicker type="file" accept="image/*" capture="environment" hidden (change)="onSelectMedia($event, 'checkout')">
+        <input #checkoutPicker type="file" accept="image/*" multiple hidden (change)="onSelectMedia($event, 'checkout')">
+        <div class="photo-grid photo-grid-large" *ngIf="r.checkout_photos.length; else emptyCheckoutPhotos">
+          <div class="photo-item" *ngFor="let photo of r.checkout_photos; let i = index; trackBy: trackByMedia">
+            <button type="button" class="photo-card" (click)="openGallery(r.checkout_photos, i, 'Check-out')">
+              <img [src]="photo.url || photo.thumb" [alt]="'Check-out ' + (i + 1)">
+            </button>
+            <ion-button size="small" color="danger" fill="clear" (click)="removeMedia(photo.id)">Remover</ion-button>
+          </div>
+        </div>
+        <ng-template #emptyCheckoutPhotos>
+          <div class="empty-state">Sem ficheiros de check-out.</div>
+        </ng-template>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngSwitchCase="'parts'">
+      <ion-card-header>
+        <ion-card-title>Pecas e custos</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Fornecedor</ion-label>
+          <ion-input [(ngModel)]="partDraft.supplier"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Numero fatura</ion-label>
+          <ion-input [(ngModel)]="partDraft.invoice_number"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Data</ion-label>
+          <ion-input type="date" [(ngModel)]="partDraft.part_date"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Nome peca</ion-label>
+          <ion-input [(ngModel)]="partDraft.part_name"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Valor</ion-label>
+          <ion-input type="number" [(ngModel)]="partDraft.amount"></ion-input>
+        </ion-item>
+        <div class="row-actions">
+          <ion-button (click)="savePart()" [disabled]="submitting">{{ editingPartId ? 'Atualizar peca' : 'Adicionar peca' }}</ion-button>
+          <ion-button *ngIf="editingPartId" fill="outline" color="medium" (click)="cancelEditPart()">Cancelar</ion-button>
+        </div>
+
+        <ion-list>
+          <ion-item *ngFor="let p of r.parts; trackBy: trackByPart">
+            <ion-label>
+              <h3>{{ p.part_name || 'Sem nome' }} - {{ p.amount | number:'1.2-2' }} EUR</h3>
+              <p>{{ p.supplier || '-' }} | {{ p.invoice_number || '-' }} | {{ p.part_date || '-' }}</p>
+            </ion-label>
+            <ion-button fill="clear" color="medium" (click)="startEditPart(p)">Editar</ion-button>
+            <ion-button fill="clear" color="danger" (click)="deletePart(p.id)">Remover</ion-button>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngSwitchCase="'history'">
+      <ion-card-header>
+        <ion-card-title>Historico da viatura</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <h3>Intervencoes da viatura</h3>
+        <ion-list>
+          <ion-item *ngFor="let item of r.vehicle_repairs; trackBy: trackByHistory">
+            <ion-label>
+              <h3>#{{ item.id }} - {{ item.state }} <ion-badge *ngIf="item.is_current" color="primary">Atual</ion-badge></h3>
+              <p>Abertura: {{ item.opened_at || '-' }} | Previsao: {{ item.expected_completion_date || '-' }} | Checklist: {{ item.checklist_percentage }}%</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+
+        <h3>Totais por mecanico</h3>
+        <ion-list>
+          <ion-item *ngFor="let total of r.mechanic_totals">
+            <ion-label>
+              <h3>{{ total.name }}</h3>
+              <p>{{ formatMinutes(total.minutes) }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+
+        <h3>Registos de trabalho</h3>
+        <ion-list>
+          <ion-item *ngFor="let log of r.work_logs">
+            <ion-label>
+              <h3>{{ log.user_name || ('Utilizador #' + log.user_id) }}</h3>
+              <p>{{ log.started_at || '-' }} -> {{ log.finished_at || 'Em curso' }} ({{ formatMinutes(log.duration_minutes) }})</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </ng-container>
+</ion-content>
+
+<ion-content *ngIf="loading" class="loading-wrap">
+  <ion-spinner name="crescent"></ion-spinner>
+</ion-content>
+
+<ion-modal [isOpen]="isGalleryOpen" (didDismiss)="closeGallery()" cssClass="repair-gallery-modal">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ galleryTitle }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeGallery()">Fechar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <div class="gallery-strip" #galleryStrip>
+        <div class="gallery-slide" *ngFor="let photo of galleryPhotos; trackBy: trackByMedia">
+          <img [src]="photo.url || photo.thumb" alt="Foto da intervencao">
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+

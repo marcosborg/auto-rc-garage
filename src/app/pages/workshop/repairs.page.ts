@@ -1,0 +1,100 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import {
+  IonBadge,
+  IonButton,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonContent,
+  IonItem,
+  IonLabel,
+  IonRefresher,
+  IonRefresherContent,
+  IonSearchbar,
+  IonSegment,
+  IonSegmentButton,
+  IonSpinner,
+  ToastController,
+} from '@ionic/angular/standalone';
+import { finalize } from 'rxjs';
+import { RepairListItem } from '../../core/models/workshop.models';
+import { WorkshopApiService } from '../../core/services/workshop-api.service';
+
+@Component({
+  selector: 'app-repairs-page',
+  templateUrl: './repairs.page.html',
+  styleUrls: ['./repairs.page.scss'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    IonContent,
+    IonSearchbar,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonButton,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardSubtitle,
+    IonCardContent,
+    IonBadge,
+    IonItem,
+    IonSpinner,
+    IonRefresher,
+    IonRefresherContent,
+  ],
+})
+export class RepairsPage {
+  private readonly workshopApi = inject(WorkshopApiService);
+  private readonly router = inject(Router);
+  private readonly toast = inject(ToastController);
+
+  repairs: RepairListItem[] = [];
+  status: 'open' | 'all' = 'open';
+  search = '';
+  loading = false;
+
+  ionViewWillEnter(): void {
+    this.load();
+  }
+
+  load(event?: CustomEvent): void {
+    this.loading = !event;
+    this.workshopApi
+      .getRepairs(this.status, this.search)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          event?.detail.complete();
+        }),
+      )
+      .subscribe({
+        next: (res) => (this.repairs = res.data),
+        error: async () => {
+          const toast = await this.toast.create({
+            message: 'Não foi possível carregar as intervenções.',
+            duration: 1800,
+            color: 'danger',
+          });
+          await toast.present();
+        },
+      });
+  }
+
+  openRepair(repair: RepairListItem): void {
+    this.router.navigate(['/workshop/repairs', repair.id]);
+  }
+
+  onStatusChange(value: string | number | null | undefined): void {
+    this.status = value === 'all' ? 'all' : 'open';
+    this.load();
+  }
+}

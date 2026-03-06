@@ -1,0 +1,32 @@
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-shell">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Auto RC Garage</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p class="subtitle">Gestão de oficina</p>
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <ion-item>
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input type="email" formControlName="email" autocomplete="email"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Password</ion-label>
+            <ion-input type="password" formControlName="password" autocomplete="current-password"></ion-input>
+          </ion-item>
+
+          <ion-text color="danger" *ngIf="form.invalid && (form.touched || form.dirty)">
+            <p class="error">Preenche email e password válidos.</p>
+          </ion-text>
+
+          <ion-button type="submit" expand="block" [disabled]="isLoading">
+            <ion-spinner *ngIf="isLoading" name="dots"></ion-spinner>
+            <span *ngIf="!isLoading">Entrar</span>
+          </ion-button>
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

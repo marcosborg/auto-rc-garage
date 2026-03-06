@@ -1,0 +1,26 @@
+<ion-content class="new-content">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Nova intervenção por viatura</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="stacked">Matrícula / Modelo</ion-label>
+        <ion-input [(ngModel)]="search" (keyup.enter)="loadVehicles()"></ion-input>
+      </ion-item>
+      <ion-button expand="block" (click)="loadVehicles()" [disabled]="loading">Pesquisar</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <div *ngIf="loading" class="loading"><ion-spinner></ion-spinner></div>
+
+  <ion-list>
+    <ion-item *ngFor="let vehicle of vehicles">
+      <ion-label>
+        <h3>{{ vehicle.license || vehicle.foreign_license }}</h3>
+        <p>{{ vehicle.brand }} {{ vehicle.model }}</p>
+      </ion-label>
+      <ion-button slot="end" (click)="create(vehicle.id)" [disabled]="loading">Criar intervenção</ion-button>
+    </ion-item>
+  </ion-list>
+</ion-content>

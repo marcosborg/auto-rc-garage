@@ -1,0 +1,49 @@
+<ion-content class="page-content">
+  <div class="page-header">
+    <h2>Intervenções</h2>
+    <ion-button size="small" routerLink="/workshop/new-intervention">Nova</ion-button>
+  </div>
+
+  <ion-searchbar
+    [(ngModel)]="search"
+    placeholder="Pesquisar por matrícula/modelo"
+    (ionClear)="load()"
+    (keyup.enter)="load()"
+  ></ion-searchbar>
+
+  <ion-segment [value]="status" (ionChange)="onStatusChange($event.detail.value)">
+    <ion-segment-button value="open"><ion-label>Abertas</ion-label></ion-segment-button>
+    <ion-segment-button value="all"><ion-label>Todas</ion-label></ion-segment-button>
+  </ion-segment>
+
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <ion-card *ngFor="let repair of repairs" button (click)="openRepair(repair)">
+      <ion-card-header>
+        <ion-card-title>{{ repair.vehicle_label || ('Intervenção #' + repair.id) }}</ion-card-title>
+        <ion-card-subtitle>#{{ repair.id }} - {{ repair.state }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="meta-row">
+          <ion-badge [color]="repair.is_open ? 'warning' : 'success'">
+            {{ repair.is_open ? 'Aberta' : 'Fechada' }}
+          </ion-badge>
+          <span *ngIf="repair.repair_duration_minutes !== null">
+            {{ repair.repair_duration_minutes }} min
+          </span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-item *ngIf="repairs.length === 0" lines="none">
+      <ion-label>Nenhuma intervenção encontrada.</ion-label>
+    </ion-item>
+  </ng-container>
+</ion-content>
