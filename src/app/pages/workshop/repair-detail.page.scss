@@ -96,6 +96,29 @@ ion-card {
   margin-bottom: 10px;
 }
 
+.media-upload-status {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #b7c9e7;
+  border-radius: 10px;
+  background: #eef5ff;
+  color: #21395f;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(20, 27, 45, 0.1);
+}
+
+.media-upload-status ion-spinner {
+  width: 20px;
+  height: 20px;
+}
+
 .photo-grid-large {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;

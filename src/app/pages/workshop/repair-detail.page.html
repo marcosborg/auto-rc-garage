@@ -171,6 +171,10 @@
         <div class="row-actions">
           <ion-button size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkin')">Adicionar ficheiros check-in</ion-button>
         </div>
+        <div class="media-upload-status" *ngIf="uploadingMedia && mediaUploadCollection === 'checkin'">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>{{ mediaUploadMessage || 'A enviar foto...' }}</span>
+        </div>
         <input #checkinCameraPicker type="file" accept="image/*" capture="environment" hidden (change)="onSelectMedia($event, 'checkin')">
         <input #checkinPicker type="file" accept="image/*" multiple hidden (change)="onSelectMedia($event, 'checkin')">
         <div class="photo-grid photo-grid-large" *ngIf="r.checkin_photos.length; else emptyCheckinPhotos">
@@ -188,6 +192,10 @@
         <h3>Check-out</h3>
         <div class="row-actions">
           <ion-button size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkout')">Adicionar ficheiros check-out</ion-button>
+        </div>
+        <div class="media-upload-status" *ngIf="uploadingMedia && mediaUploadCollection === 'checkout'">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>{{ mediaUploadMessage || 'A enviar foto...' }}</span>
         </div>
         <input #checkoutCameraPicker type="file" accept="image/*" capture="environment" hidden (change)="onSelectMedia($event, 'checkout')">
         <input #checkoutPicker type="file" accept="image/*" multiple hidden (change)="onSelectMedia($event, 'checkout')">

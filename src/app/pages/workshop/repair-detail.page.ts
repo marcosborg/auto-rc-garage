@@ -98,6 +98,8 @@ export class RepairDetailPage {
   loading = true;
   submitting = false;
   uploadingMedia = false;
+  mediaUploadMessage = '';
+  mediaUploadCollection: 'checkin' | 'checkout' | null = null;
   section: RepairSection = 'overview';
   repair: RepairDetail | null = null;
   states: RepairState[] = [];
@@ -242,11 +244,17 @@ export class RepairDetailPage {
     }
 
     this.uploadingMedia = true;
+    this.mediaUploadCollection = collection;
+    this.mediaUploadMessage = files.length === 1 ? 'A preparar foto...' : `A preparar ${files.length} fotos...`;
     (async () => {
       try {
         let latest = this.repair;
-        for (const file of files) {
-          const res = await firstValueFrom(this.workshopApi.uploadRepairMedia(this.repairId(), collection, file));
+        for (const [index, file] of files.entries()) {
+          this.mediaUploadMessage = `A ajustar foto ${index + 1} de ${files.length}...`;
+          const resizedFile = await this.resizeImageForUpload(file);
+
+          this.mediaUploadMessage = `A enviar foto ${index + 1} de ${files.length}...`;
+          const res = await firstValueFrom(this.workshopApi.uploadRepairMedia(this.repairId(), collection, resizedFile));
           latest = res.data;
         }
         if (latest) {
@@ -257,9 +265,73 @@ export class RepairDetailPage {
         await this.presentToast('Falha ao enviar ficheiros.', 'danger', 1800);
       } finally {
         this.uploadingMedia = false;
+        this.mediaUploadMessage = '';
+        this.mediaUploadCollection = null;
         input.value = '';
       }
     })();
+  }
+
+  private async resizeImageForUpload(file: File): Promise<File> {
+    if (!file.type.startsWith('image/')) {
+      return file;
+    }
+
+    let image: HTMLImageElement;
+    try {
+      image = await this.loadImage(file);
+    } catch {
+      return file;
+    }
+
+    const maxWidth = 600;
+    const scale = image.width > maxWidth ? maxWidth / image.width : 1;
+    const width = Math.round(image.width * scale);
+    const height = Math.round(image.height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', 0.7);
+    });
+
+    if (!blob) {
+      return file;
+    }
+
+    const normalizedName = file.name.replace(/\.[^.]+$/, '') || 'foto';
+    return new File([blob], `${normalizedName}.jpg`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+  }
+
+  private loadImage(file: File): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const image = new Image();
+
+      image.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(image);
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Nao foi possivel preparar a imagem.'));
+      };
+
+      image.src = url;
+    });
   }
 
 
