@@ -74,10 +74,6 @@
         </div>
 
         <ion-item>
-          <ion-label position="stacked">Assinatura</ion-label>
-          <ion-input [(ngModel)]="form.name"></ion-input>
-        </ion-item>
-        <ion-item>
           <ion-label position="stacked">Kms na entrada</ion-label>
           <ion-input type="number" [(ngModel)]="form.kilometers"></ion-input>
         </ion-item>
@@ -112,6 +108,62 @@
           <ion-label position="stacked">Observacoes</ion-label>
           <ion-textarea autoGrow="true" [(ngModel)]="form.obs_2"></ion-textarea>
         </ion-item>
+
+        <div class="entry-sheet">
+          <div class="entry-sheet-head">
+            <div>
+              <h3>Folha de entrada</h3>
+              <p>Assinaturas obrigatorias para gerar a folha oficial.</p>
+            </div>
+          </div>
+
+          <div class="signature-grid">
+            <div class="signature-panel">
+              <div class="signature-head">
+                <strong>Rececao</strong>
+                <ion-badge [color]="hasSignature('receptionist') ? 'success' : 'warning'">{{ signatureStatus('receptionist') }}</ion-badge>
+              </div>
+              <canvas
+                #receptionistSignatureCanvas
+                class="signature-canvas"
+                (pointerdown)="beginSignature($event, 'receptionist')"
+                (pointermove)="drawSignature($event, 'receptionist')"
+                (pointerup)="endSignature($event, 'receptionist')"
+                (pointercancel)="endSignature($event, 'receptionist')"
+                (pointerleave)="endSignature($event, 'receptionist')"
+              ></canvas>
+              <ion-button size="small" fill="clear" color="medium" (click)="clearSignature('receptionist')">Limpar</ion-button>
+            </div>
+
+            <div class="signature-panel">
+              <div class="signature-head">
+                <strong>Cliente</strong>
+                <ion-badge [color]="hasSignature('client') ? 'success' : 'warning'">{{ signatureStatus('client') }}</ion-badge>
+              </div>
+              <canvas
+                #clientSignatureCanvas
+                class="signature-canvas"
+                (pointerdown)="beginSignature($event, 'client')"
+                (pointermove)="drawSignature($event, 'client')"
+                (pointerup)="endSignature($event, 'client')"
+                (pointercancel)="endSignature($event, 'client')"
+                (pointerleave)="endSignature($event, 'client')"
+              ></canvas>
+              <ion-button size="small" fill="clear" color="medium" (click)="clearSignature('client')">Limpar</ion-button>
+            </div>
+          </div>
+
+          <div class="row-actions">
+            <ion-button (click)="saveSignatures()" [disabled]="savingSignatures || !hasSignature('receptionist') || !hasSignature('client')">
+              <ion-spinner *ngIf="savingSignatures" name="crescent"></ion-spinner>
+              <span>{{ savingSignatures ? 'A guardar...' : 'Guardar assinaturas' }}</span>
+            </ion-button>
+            <ion-button color="success" (click)="generateEntrySheetPdf()" [disabled]="!canGenerateEntrySheetPdf">
+              <ion-spinner *ngIf="generatingEntryPdf" name="crescent"></ion-spinner>
+              <span>{{ generatingEntryPdf ? 'A gerar PDF...' : 'Gerar PDF da folha de entrada' }}</span>
+            </ion-button>
+          </div>
+        </div>
 
         <ion-button expand="block" (click)="saveAll()" [disabled]="submitting">Guardar alteracoes</ion-button>
       </ion-card-content>

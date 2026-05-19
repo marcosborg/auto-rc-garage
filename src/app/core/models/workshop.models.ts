@@ -109,6 +109,8 @@ export interface RepairDetail {
   expected_completion_date: string | null;
   checkin_photos: RepairMedia[];
   checkout_photos: RepairMedia[];
+  receptionist_signature: RepairMedia | null;
+  client_signature: RepairMedia | null;
   parts: RepairPart[];
   parts_total: number;
   work_logs: RepairWorkLog[];

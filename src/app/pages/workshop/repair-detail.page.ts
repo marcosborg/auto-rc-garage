@@ -1,7 +1,10 @@
 ﻿import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -33,6 +36,7 @@ import {
   ActionSheetController,
   ToastController,
 } from '@ionic/angular/standalone';
+import jsPDF from 'jspdf';
 import { finalize, firstValueFrom } from 'rxjs';
 import {
   RepairChecklistItem,
@@ -44,6 +48,7 @@ import {
 import { WorkshopApiService } from '../../core/services/workshop-api.service';
 
 type RepairSection = 'overview' | 'checklist' | 'media' | 'parts' | 'history';
+type SignatureRole = 'receptionist' | 'client';
 
 @Component({
   selector: 'app-repair-detail-page',
@@ -82,7 +87,9 @@ type RepairSection = 'overview' | 'checklist' | 'media' | 'parts' | 'history';
     IonProgressBar,
   ],
 })
-export class RepairDetailPage {
+export class RepairDetailPage implements AfterViewChecked {
+  @ViewChild('receptionistSignatureCanvas') receptionistSignatureCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('clientSignatureCanvas') clientSignatureCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('checkinCameraPicker') checkinCameraPicker?: ElementRef<HTMLInputElement>;
   @ViewChild('checkinPicker') checkinPicker?: ElementRef<HTMLInputElement>;
   @ViewChild('checkoutCameraPicker') checkoutCameraPicker?: ElementRef<HTMLInputElement>;
@@ -103,6 +110,15 @@ export class RepairDetailPage {
   section: RepairSection = 'overview';
   repair: RepairDetail | null = null;
   states: RepairState[] = [];
+  savingSignatures = false;
+  generatingEntryPdf = false;
+  receptionistSignatureDataUrl = '';
+  clientSignatureDataUrl = '';
+  receptionistSignatureRemoved = false;
+  clientSignatureRemoved = false;
+
+  private drawingRole: SignatureRole | null = null;
+  private signatureCanvasesReady = false;
 
   form = {
     name: '',
@@ -130,6 +146,18 @@ export class RepairDetailPage {
   ionViewWillEnter(): void {
     this.load();
     this.workshopApi.getRepairStates().subscribe({ next: (items) => (this.states = items) });
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.section !== 'overview' || this.signatureCanvasesReady) {
+      return;
+    }
+
+    const canvases = [this.receptionistSignatureCanvas?.nativeElement, this.clientSignatureCanvas?.nativeElement];
+    if (canvases.every(Boolean)) {
+      canvases.forEach((canvas) => this.prepareSignatureCanvas(canvas as HTMLCanvasElement));
+      this.signatureCanvasesReady = true;
+    }
   }
 
   private repairId(): number {
@@ -182,6 +210,11 @@ export class RepairDetailPage {
 
     this.partDraft = this.emptyPartDraft();
     this.editingPartId = null;
+    this.receptionistSignatureDataUrl = '';
+    this.clientSignatureDataUrl = '';
+    this.receptionistSignatureRemoved = false;
+    this.clientSignatureRemoved = false;
+    this.signatureCanvasesReady = false;
   }
 
   get checklistProgress(): number {
@@ -194,6 +227,149 @@ export class RepairDetailPage {
 
   get checklistPercentLabel(): string {
     return `${Math.round(this.checklistProgress * 100)}%`;
+  }
+
+  get canGenerateEntrySheetPdf(): boolean {
+    return this.signaturesSavedForPdf && !this.generatingEntryPdf;
+  }
+
+  get signaturesSavedForPdf(): boolean {
+    return !!this.repair?.receptionist_signature
+      && !!this.repair?.client_signature
+      && !this.receptionistSignatureDataUrl
+      && !this.clientSignatureDataUrl
+      && !this.receptionistSignatureRemoved
+      && !this.clientSignatureRemoved;
+  }
+
+  hasSignature(role: SignatureRole): boolean {
+    if (role === 'receptionist') {
+      return !!this.receptionistSignatureDataUrl || (!!this.repair?.receptionist_signature && !this.receptionistSignatureRemoved);
+    }
+
+    return !!this.clientSignatureDataUrl || (!!this.repair?.client_signature && !this.clientSignatureRemoved);
+  }
+
+  signatureStatus(role: SignatureRole): string {
+    return this.hasSignature(role) ? 'Assinado' : 'Pendente';
+  }
+
+  beginSignature(event: PointerEvent, role: SignatureRole): void {
+    const canvas = this.signatureCanvas(role);
+    if (!canvas) return;
+
+    this.drawingRole = role;
+    canvas.setPointerCapture(event.pointerId);
+
+    const context = this.signatureContext(canvas);
+    const point = this.canvasPoint(event, canvas);
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+  }
+
+  drawSignature(event: PointerEvent, role: SignatureRole): void {
+    if (this.drawingRole !== role) return;
+
+    const canvas = this.signatureCanvas(role);
+    if (!canvas) return;
+
+    const context = this.signatureContext(canvas);
+    const point = this.canvasPoint(event, canvas);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+
+    const dataUrl = canvas.toDataURL('image/png');
+    if (role === 'receptionist') {
+      this.receptionistSignatureDataUrl = dataUrl;
+      this.receptionistSignatureRemoved = false;
+      return;
+    }
+
+    this.clientSignatureDataUrl = dataUrl;
+    this.clientSignatureRemoved = false;
+  }
+
+  endSignature(event: PointerEvent, role: SignatureRole): void {
+    if (this.drawingRole !== role) return;
+
+    this.drawingRole = null;
+    this.signatureCanvas(role)?.releasePointerCapture(event.pointerId);
+  }
+
+  clearSignature(role: SignatureRole): void {
+    const canvas = this.signatureCanvas(role);
+    if (canvas) {
+      this.prepareSignatureCanvas(canvas);
+    }
+
+    if (role === 'receptionist') {
+      this.receptionistSignatureDataUrl = '';
+      this.receptionistSignatureRemoved = true;
+      return;
+    }
+
+    this.clientSignatureDataUrl = '';
+    this.clientSignatureRemoved = true;
+  }
+
+  saveSignatures(): void {
+    if (!this.hasSignature('receptionist') || !this.hasSignature('client')) {
+      this.presentToast('As duas assinaturas sao obrigatorias.', 'warning', 1800);
+      return;
+    }
+
+    this.savingSignatures = true;
+    (async () => {
+      try {
+        const receptionistFile = await this.signatureFile('receptionist', 'assinatura-rececao.png');
+        const clientFile = await this.signatureFile('client', 'assinatura-cliente.png');
+        const res = await firstValueFrom(this.workshopApi.saveRepairSignatures(this.repairId(), receptionistFile, clientFile));
+        this.applyUpdate(res.data);
+        await this.presentToast('Assinaturas guardadas.', 'success', 1400);
+      } catch {
+        await this.presentToast('Nao foi possivel guardar as assinaturas.', 'danger', 1800);
+      } finally {
+        this.savingSignatures = false;
+      }
+    })();
+  }
+
+  generateEntrySheetPdf(): void {
+    if (!this.repair) return;
+    if (!this.canGenerateEntrySheetPdf) {
+      this.presentToast('Guarde as duas assinaturas antes de gerar o PDF.', 'warning', 1800);
+      return;
+    }
+
+    this.generatingEntryPdf = true;
+    (async () => {
+      try {
+        const pdf = await this.buildEntrySheetPdf(this.repair as RepairDetail);
+        const fileName = `folha-entrada-${this.repairLabel(this.repair as RepairDetail)}-${Date.now()}.pdf`;
+
+        if (Capacitor.isNativePlatform()) {
+          const base64 = pdf.output('datauristring').split(',')[1];
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64,
+            directory: Directory.Cache,
+          });
+
+          await Share.share({
+            title: 'Folha de entrada',
+            text: 'Folha de entrada da intervencao',
+            url: result.uri,
+            dialogTitle: 'Abrir ou imprimir folha de entrada',
+          });
+        } else {
+          window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
+        }
+      } catch {
+        await this.presentToast('Nao foi possivel gerar o PDF.', 'danger', 1800);
+      } finally {
+        this.generatingEntryPdf = false;
+      }
+    })();
   }
 
   async openMediaPicker(collection: 'checkin' | 'checkout'): Promise<void> {
@@ -332,6 +508,256 @@ export class RepairDetailPage {
 
       image.src = url;
     });
+  }
+
+  private prepareSignatureCanvas(canvas: HTMLCanvasElement): void {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const width = Math.max(320, Math.round(rect.width || 320));
+    const height = 150;
+
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    canvas.style.height = `${height}px`;
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
+    context.strokeStyle = '#172033';
+    context.lineWidth = 2.2;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+  }
+
+  private signatureCanvas(role: SignatureRole): HTMLCanvasElement | null {
+    return role === 'receptionist'
+      ? this.receptionistSignatureCanvas?.nativeElement ?? null
+      : this.clientSignatureCanvas?.nativeElement ?? null;
+  }
+
+  private signatureContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Canvas nao suportado.');
+    }
+
+    return context;
+  }
+
+  private canvasPoint(event: PointerEvent, canvas: HTMLCanvasElement): { x: number; y: number } {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }
+
+  private async signatureFile(role: SignatureRole, fileName: string): Promise<File> {
+    const localDataUrl = role === 'receptionist' ? this.receptionistSignatureDataUrl : this.clientSignatureDataUrl;
+    if (localDataUrl) {
+      return this.dataUrlToFile(localDataUrl, fileName);
+    }
+
+    const media = role === 'receptionist' ? this.repair?.receptionist_signature : this.repair?.client_signature;
+    if (!media?.url) {
+      throw new Error('Assinatura em falta.');
+    }
+
+    return this.urlToFile(media.url, fileName);
+  }
+
+  private dataUrlToFile(dataUrl: string, fileName: string): File {
+    const [header, content] = dataUrl.split(',');
+    const mime = header.match(/data:(.*?);base64/)?.[1] ?? 'image/png';
+    const binary = atob(content);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new File([bytes], fileName, { type: mime, lastModified: Date.now() });
+  }
+
+  private async urlToFile(url: string, fileName: string): Promise<File> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Nao foi possivel obter assinatura existente.');
+    }
+
+    const blob = await response.blob();
+    return new File([blob], fileName, { type: blob.type || 'image/png', lastModified: Date.now() });
+  }
+
+  private async buildEntrySheetPdf(repair: RepairDetail): Promise<jsPDF> {
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const margin = 12;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    const ensureSpace = (height: number) => {
+      if (y + height <= pageHeight - margin) return;
+      pdf.addPage();
+      y = margin;
+    };
+
+    const addLine = (label: string, value: string | number | null | undefined) => {
+      ensureSpace(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${label}:`, margin, y);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(String(value ?? '-'), margin + 42, y);
+      y += 6;
+    };
+
+    const addTextBlock = (label: string, value: string | null | undefined) => {
+      ensureSpace(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(label, margin, y);
+      y += 5;
+      pdf.setFont('helvetica', 'normal');
+      const lines = pdf.splitTextToSize(value?.trim() || '-', contentWidth);
+      ensureSpace(lines.length * 5);
+      pdf.text(lines, margin, y);
+      y += lines.length * 5 + 3;
+    };
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text('Auto RC - Folha de entrada', margin, y);
+    y += 8;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Gerado em ${new Date().toLocaleString('pt-PT')}`, margin, y);
+    y += 8;
+
+    pdf.setFontSize(11);
+    addLine('Intervencao', `#${repair.id} - ${repair.repair_state}`);
+    addLine('Viatura', `${repair.vehicle.license || repair.vehicle.foreign_license || '-'} - ${repair.vehicle.brand || ''} ${repair.vehicle.model || ''}`);
+    addLine('Versao', repair.vehicle.version);
+    addLine('Ano/Mes', `${repair.vehicle.year ?? '-'}/${repair.vehicle.month ?? '-'}`);
+    addLine('Combustivel', repair.vehicle.fuel);
+    addLine('Cor', repair.vehicle.color);
+    addLine('Kms entrada', repair.kilometers ?? repair.vehicle.kilometers);
+    addLine('Data/hora', repair.timestamp ? this.formatDateTime(repair.timestamp) : '-');
+    addTextBlock('Observacoes de entrada', repair.obs_1);
+    addTextBlock('Observacoes', repair.obs_2);
+
+    ensureSpace(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Checklist', margin, y);
+    y += 6;
+    pdf.setFont('helvetica', 'normal');
+    for (const item of repair.checklist) {
+      const marker = item.checked ? '[x]' : '[ ]';
+      const note = item.note ? ` - ${item.note}` : '';
+      const lines = pdf.splitTextToSize(`${marker} ${item.group} - ${item.label}${note}`, contentWidth);
+      ensureSpace(lines.length * 5);
+      pdf.text(lines, margin, y);
+      y += lines.length * 5;
+    }
+
+    ensureSpace(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Fotos check-in', margin, y);
+    y += 6;
+    const photoWidth = (contentWidth - 6) / 2;
+    const photoHeight = 38;
+    for (const [index, photo] of repair.checkin_photos.entries()) {
+      const column = index % 2;
+      if (column === 0) {
+        ensureSpace(photoHeight + 8);
+      }
+      const x = margin + column * (photoWidth + 6);
+      const dataUrl = await this.urlToDataUrl(photo.url || photo.thumb);
+      pdf.setDrawColor(210, 216, 226);
+      pdf.rect(x, y, photoWidth, photoHeight);
+      if (dataUrl) {
+        pdf.addImage(dataUrl, this.imageFormat(dataUrl), x + 1, y + 1, photoWidth - 2, photoHeight - 2, undefined, 'FAST');
+      } else {
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Foto indisponivel no momento da geracao', x + 3, y + 18, { maxWidth: photoWidth - 6 });
+      }
+      if (column === 1 || index === repair.checkin_photos.length - 1) {
+        y += photoHeight + 6;
+      }
+    }
+    if (!repair.checkin_photos.length) {
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Sem fotos check-in.', margin, y);
+      y += 6;
+    }
+
+    const receptionistSignature = await this.signatureDataUrlForPdf('receptionist');
+    const clientSignature = await this.signatureDataUrlForPdf('client');
+    ensureSpace(54);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Assinaturas', margin, y);
+    y += 7;
+    this.addSignatureToPdf(pdf, 'Rececao', receptionistSignature, margin, y, photoWidth, 32);
+    this.addSignatureToPdf(pdf, 'Cliente', clientSignature, margin + photoWidth + 6, y, photoWidth, 32);
+
+    return pdf;
+  }
+
+  private addSignatureToPdf(
+    pdf: jsPDF,
+    label: string,
+    dataUrl: string | null,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(label, x, y);
+    pdf.rect(x, y + 3, width, height);
+    if (dataUrl) {
+      pdf.addImage(dataUrl, 'PNG', x + 2, y + 5, width - 4, height - 4, undefined, 'FAST');
+    }
+  }
+
+  private async signatureDataUrlForPdf(role: SignatureRole): Promise<string | null> {
+    const localDataUrl = role === 'receptionist' ? this.receptionistSignatureDataUrl : this.clientSignatureDataUrl;
+    if (localDataUrl) {
+      return localDataUrl;
+    }
+
+    const media = role === 'receptionist' ? this.repair?.receptionist_signature : this.repair?.client_signature;
+    return media?.url ? this.urlToDataUrl(media.url) : null;
+  }
+
+  private async urlToDataUrl(url: string): Promise<string | null> {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  private imageFormat(dataUrl: string): 'JPEG' | 'PNG' | 'WEBP' {
+    if (dataUrl.startsWith('data:image/png')) return 'PNG';
+    if (dataUrl.startsWith('data:image/webp')) return 'WEBP';
+    return 'JPEG';
+  }
+
+  private repairLabel(repair: RepairDetail): string {
+    return (repair.vehicle.license || repair.vehicle.foreign_license || String(repair.id))
+      .replace(/[^a-z0-9_-]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase();
   }
 
 

@@ -92,6 +92,13 @@ export class WorkshopApiService {
     return this.http.delete<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/repairs/${id}/media/${mediaId}`);
   }
 
+  saveRepairSignatures(id: number, receptionistSignature: File, clientSignature: File): Observable<{ data: RepairDetail }> {
+    const formData = new FormData();
+    formData.append('receptionist_signature', receptionistSignature);
+    formData.append('client_signature', clientSignature);
+    return this.http.post<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/repairs/${id}/signatures`, formData);
+  }
+
   searchVehicles(search = ''): Observable<{ data: VehicleLookup[] }> {
     return this.http.get<{ data: VehicleLookup[] }>(`${environment.apiBaseUrl}/mobile/workshop/vehicles`, {
       params: { search },

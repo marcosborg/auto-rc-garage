@@ -65,6 +65,60 @@ ion-card {
   color: #263248;
 }
 
+.entry-sheet {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #d7e0ee;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.entry-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.entry-sheet-head h3 {
+  margin-top: 0;
+}
+
+.entry-sheet-head p {
+  margin: 2px 0 0;
+  color: #52627a;
+  font-size: 0.86rem;
+}
+
+.signature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.signature-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signature-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: #1f2a3d;
+}
+
+.signature-canvas {
+  width: 100%;
+  min-height: 150px;
+  border: 1px solid #cbd6e5;
+  border-radius: 10px;
+  background: #ffffff;
+  touch-action: none;
+}
+
 .checklist-group {
   padding: 8px 6px 6px;
 }
@@ -201,6 +255,10 @@ h3 {
   }
 
   .vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .signature-grid {
     grid-template-columns: 1fr;
   }
 
