@@ -316,6 +316,11 @@ export class RepairDetailPage implements AfterViewChecked {
   }
 
   signatureImageSrc(role: SignatureRole): string {
+    const localDataUrl = role === 'receptionist' ? this.receptionistSignatureDataUrl : this.clientSignatureDataUrl;
+    if (localDataUrl) {
+      return '';
+    }
+
     const media = role === 'receptionist' ? this.repair?.receptionist_signature : this.repair?.client_signature;
     return media?.data_url || media?.url || '';
   }
@@ -376,12 +381,10 @@ export class RepairDetailPage implements AfterViewChecked {
     const dataUrl = canvas.toDataURL('image/png');
     if (role === 'receptionist') {
       this.receptionistSignatureDataUrl = dataUrl;
-      this.receptionistSignatureRemoved = false;
       return;
     }
 
     this.clientSignatureDataUrl = dataUrl;
-    this.clientSignatureRemoved = false;
   }
 
   clearSignature(role: SignatureRole): void {
