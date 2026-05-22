@@ -45,6 +45,7 @@ import {
   RepairPart,
   RepairState,
 } from '../../core/models/workshop.models';
+import { AuthService } from '../../core/services/auth.service';
 import { WorkshopApiService } from '../../core/services/workshop-api.service';
 
 type RepairSection = 'overview' | 'checklist' | 'media' | 'parts' | 'history';
@@ -98,6 +99,7 @@ export class RepairDetailPage implements AfterViewChecked {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
   private readonly workshopApi = inject(WorkshopApiService);
   private readonly toast = inject(ToastController);
   private readonly actionSheet = inject(ActionSheetController);
@@ -153,9 +155,10 @@ export class RepairDetailPage implements AfterViewChecked {
       return;
     }
 
-    const canvases = [this.receptionistSignatureCanvas?.nativeElement, this.clientSignatureCanvas?.nativeElement];
-    if (canvases.every(Boolean)) {
-      canvases.forEach((canvas) => this.prepareSignatureCanvas(canvas as HTMLCanvasElement));
+    const canvases = [this.receptionistSignatureCanvas?.nativeElement, this.clientSignatureCanvas?.nativeElement]
+      .filter((canvas): canvas is HTMLCanvasElement => !!canvas);
+    if (canvases.length) {
+      canvases.forEach((canvas) => this.prepareSignatureCanvas(canvas));
       this.signatureCanvasesReady = true;
     }
   }
@@ -229,6 +232,68 @@ export class RepairDetailPage implements AfterViewChecked {
     return `${Math.round(this.checklistProgress * 100)}%`;
   }
 
+  get repairStarted(): boolean {
+    return !!this.repair?.repair_started_at;
+  }
+
+  get repairFinished(): boolean {
+    return !!this.repair?.repair_finished_at;
+  }
+
+  get hasMyOpenWork(): boolean {
+    const userId = this.auth.user()?.id;
+    if (!userId || !this.repair) {
+      return false;
+    }
+
+    return this.repair.work_logs.some((log) => Number(log.user_id) === Number(userId) && !log.finished_at);
+  }
+
+  get hasMyFinishedWork(): boolean {
+    const userId = this.auth.user()?.id;
+    if (!userId || !this.repair) {
+      return false;
+    }
+
+    return this.repair.work_logs.some((log) => Number(log.user_id) === Number(userId) && !!log.finished_at);
+  }
+
+  get canStartRepair(): boolean {
+    return !!this.repair && !this.repairStarted && !this.repairFinished;
+  }
+
+  get canStartMyWork(): boolean {
+    return !!this.repair && this.repairStarted && !this.repairFinished && !this.hasMyOpenWork;
+  }
+
+  get canFinishMyWork(): boolean {
+    return !!this.repair && this.repairStarted && !this.repairFinished && this.hasMyOpenWork;
+  }
+
+  get canFinishRepair(): boolean {
+    return !!this.repair && this.repairStarted && !this.repairFinished && !this.hasMyOpenWork && this.hasMyFinishedWork;
+  }
+
+  get canEditRepair(): boolean {
+    return this.canFinishMyWork;
+  }
+
+  get editLockMessage(): string {
+    if (this.repairFinished) {
+      return 'Intervencao finalizada. As alteracoes estao bloqueadas.';
+    }
+
+    if (!this.repairStarted) {
+      return 'Inicie a reparacao antes de alterar a intervencao.';
+    }
+
+    if (!this.hasMyOpenWork) {
+      return 'Inicie o seu trabalho para alterar esta intervencao.';
+    }
+
+    return '';
+  }
+
   get canGenerateEntrySheetPdf(): boolean {
     return this.signaturesSavedForPdf && !this.generatingEntryPdf;
   }
@@ -250,11 +315,20 @@ export class RepairDetailPage implements AfterViewChecked {
     return !!this.clientSignatureDataUrl || (!!this.repair?.client_signature && !this.clientSignatureRemoved);
   }
 
+  signatureImageSrc(role: SignatureRole): string {
+    const media = role === 'receptionist' ? this.repair?.receptionist_signature : this.repair?.client_signature;
+    return media?.data_url || media?.url || '';
+  }
+
   signatureStatus(role: SignatureRole): string {
     return this.hasSignature(role) ? 'Assinado' : 'Pendente';
   }
 
   beginSignature(event: PointerEvent, role: SignatureRole): void {
+    if (!this.canEditRepair) return;
+
+    this.preventSignatureGesture(event);
+
     const canvas = this.signatureCanvas(role);
     if (!canvas) return;
 
@@ -265,10 +339,17 @@ export class RepairDetailPage implements AfterViewChecked {
     const point = this.canvasPoint(event, canvas);
     context.beginPath();
     context.moveTo(point.x, point.y);
+    context.arc(point.x, point.y, 0.8, 0, Math.PI * 2);
+    context.fillStyle = '#172033';
+    context.fill();
+    context.beginPath();
+    context.moveTo(point.x, point.y);
   }
 
   drawSignature(event: PointerEvent, role: SignatureRole): void {
     if (this.drawingRole !== role) return;
+
+    this.preventSignatureGesture(event);
 
     const canvas = this.signatureCanvas(role);
     if (!canvas) return;
@@ -277,6 +358,20 @@ export class RepairDetailPage implements AfterViewChecked {
     const point = this.canvasPoint(event, canvas);
     context.lineTo(point.x, point.y);
     context.stroke();
+  }
+
+  endSignature(event: PointerEvent, role: SignatureRole): void {
+    if (this.drawingRole !== role) return;
+
+    this.preventSignatureGesture(event);
+
+    const canvas = this.signatureCanvas(role);
+    this.drawingRole = null;
+    if (canvas?.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+
+    if (!canvas) return;
 
     const dataUrl = canvas.toDataURL('image/png');
     if (role === 'receptionist') {
@@ -289,14 +384,12 @@ export class RepairDetailPage implements AfterViewChecked {
     this.clientSignatureRemoved = false;
   }
 
-  endSignature(event: PointerEvent, role: SignatureRole): void {
-    if (this.drawingRole !== role) return;
-
-    this.drawingRole = null;
-    this.signatureCanvas(role)?.releasePointerCapture(event.pointerId);
-  }
-
   clearSignature(role: SignatureRole): void {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     const canvas = this.signatureCanvas(role);
     if (canvas) {
       this.prepareSignatureCanvas(canvas);
@@ -313,6 +406,11 @@ export class RepairDetailPage implements AfterViewChecked {
   }
 
   saveSignatures(): void {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     if (!this.hasSignature('receptionist') || !this.hasSignature('client')) {
       this.presentToast('As duas assinaturas sao obrigatorias.', 'warning', 1800);
       return;
@@ -323,8 +421,16 @@ export class RepairDetailPage implements AfterViewChecked {
       try {
         const receptionistFile = await this.signatureFile('receptionist', 'assinatura-rececao.png');
         const clientFile = await this.signatureFile('client', 'assinatura-cliente.png');
+        const receptionistDataUrl = this.receptionistSignatureDataUrl;
+        const clientDataUrl = this.clientSignatureDataUrl;
         const res = await firstValueFrom(this.workshopApi.saveRepairSignatures(this.repairId(), receptionistFile, clientFile));
         this.applyUpdate(res.data);
+        if (receptionistDataUrl && this.repair?.receptionist_signature && !this.repair.receptionist_signature.data_url) {
+          this.repair.receptionist_signature.data_url = receptionistDataUrl;
+        }
+        if (clientDataUrl && this.repair?.client_signature && !this.repair.client_signature.data_url) {
+          this.repair.client_signature.data_url = clientDataUrl;
+        }
         await this.presentToast('Assinaturas guardadas.', 'success', 1400);
       } catch {
         await this.presentToast('Nao foi possivel guardar as assinaturas.', 'danger', 1800);
@@ -373,6 +479,11 @@ export class RepairDetailPage implements AfterViewChecked {
   }
 
   async openMediaPicker(collection: 'checkin' | 'checkout'): Promise<void> {
+    if (!this.canEditRepair) {
+      await this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     const sheet = await this.actionSheet.create({
       header: 'Adicionar foto',
       buttons: [
@@ -413,6 +524,11 @@ export class RepairDetailPage implements AfterViewChecked {
   }
 
   onSelectMedia(event: Event, collection: 'checkin' | 'checkout'): void {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
     const files = input.files ? Array.from(input.files) : [];
     if (!files.length) {
@@ -555,6 +671,11 @@ export class RepairDetailPage implements AfterViewChecked {
     };
   }
 
+  private preventSignatureGesture(event: PointerEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   private async signatureFile(role: SignatureRole, fileName: string): Promise<File> {
     const localDataUrl = role === 'receptionist' ? this.receptionistSignatureDataUrl : this.clientSignatureDataUrl;
     if (localDataUrl) {
@@ -562,6 +683,10 @@ export class RepairDetailPage implements AfterViewChecked {
     }
 
     const media = role === 'receptionist' ? this.repair?.receptionist_signature : this.repair?.client_signature;
+    if (media?.data_url) {
+      return this.dataUrlToFile(media.data_url, fileName);
+    }
+
     if (!media?.url) {
       throw new Error('Assinatura em falta.');
     }
@@ -728,6 +853,10 @@ export class RepairDetailPage implements AfterViewChecked {
     }
 
     const media = role === 'receptionist' ? this.repair?.receptionist_signature : this.repair?.client_signature;
+    if (media?.data_url) {
+      return media.data_url;
+    }
+
     return media?.url ? this.urlToDataUrl(media.url) : null;
   }
 
@@ -793,6 +922,11 @@ export class RepairDetailPage implements AfterViewChecked {
     this.galleryIndex = target;
   }
   removeMedia(mediaId: number): void {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     this.uploadingMedia = true;
     this.workshopApi
       .deleteRepairMedia(this.repairId(), mediaId)
@@ -805,6 +939,10 @@ export class RepairDetailPage implements AfterViewChecked {
 
   saveAll(): void {
     if (!this.repair) return;
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
 
     const payload: Record<string, unknown> = {
       name: this.form.name || null,
@@ -874,6 +1012,11 @@ export class RepairDetailPage implements AfterViewChecked {
   }
 
   startEditPart(part: RepairPart): void {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     this.editingPartId = part.id;
     this.partDraft = {
       supplier: part.supplier ?? '',
@@ -891,16 +1034,27 @@ export class RepairDetailPage implements AfterViewChecked {
   }
 
   savePart(): void {
-    if (!this.partDraft.part_name || !this.partDraft.amount || this.partDraft.amount <= 0) {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
+    if (!this.partDraft.part_name || !this.partDraft.part_date) {
+      this.presentToast('Preencha data e nome da peça ou serviço.', 'warning', 1600);
+      return;
+    }
+
+    if (this.partDraft.amount !== null && this.partDraft.amount < 0) {
+      this.presentToast('O valor nao pode ser negativo.', 'warning', 1600);
       return;
     }
 
     const payload = {
       supplier: this.partDraft.supplier || undefined,
       invoice_number: this.partDraft.invoice_number || undefined,
-      part_date: this.partDraft.part_date || undefined,
+      part_date: this.partDraft.part_date,
       part_name: this.partDraft.part_name,
-      amount: Number(this.partDraft.amount),
+      amount: this.partDraft.amount !== null ? Number(this.partDraft.amount) : null,
     };
 
     this.submitting = true;
@@ -914,20 +1068,25 @@ export class RepairDetailPage implements AfterViewChecked {
       .subscribe({
         next: async (res) => {
           this.applyUpdate(res.data);
-          await this.presentToast(this.editingPartId ? 'Peca atualizada.' : 'Peca adicionada.', 'success', 1200);
+          await this.presentToast(this.editingPartId ? 'Peça ou serviço atualizado.' : 'Peça ou serviço adicionado.', 'success', 1200);
         },
-        error: async () => this.presentToast('Nao foi possivel guardar a peca.', 'danger', 1800),
+        error: async () => this.presentToast('Nao foi possivel guardar a peça ou serviço.', 'danger', 1800),
       });
   }
 
   deletePart(partId: number): void {
+    if (!this.canEditRepair) {
+      this.presentToast(this.editLockMessage, 'warning', 1600);
+      return;
+    }
+
     this.submitting = true;
     this.workshopApi
       .deletePart(this.repairId(), partId)
       .pipe(finalize(() => (this.submitting = false)))
       .subscribe({
         next: (res) => this.applyUpdate(res.data),
-        error: async () => this.presentToast('Nao foi possivel remover a peca.', 'danger', 1800),
+        error: async () => this.presentToast('Nao foi possivel remover a peça ou serviço.', 'danger', 1800),
       });
   }
 

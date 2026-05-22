@@ -55,9 +55,9 @@ export class WorkshopApiService {
     payload: {
       supplier?: string;
       invoice_number?: string;
-      part_date?: string;
+      part_date: string;
       part_name: string;
-      amount: number;
+      amount?: number | null;
     },
   ): Observable<{ data: RepairDetail }> {
     return this.http.post<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/repairs/${id}/parts`, payload);
@@ -69,9 +69,9 @@ export class WorkshopApiService {
     payload: {
       supplier?: string;
       invoice_number?: string;
-      part_date?: string;
-      part_name?: string;
-      amount?: number;
+      part_date: string;
+      part_name: string;
+      amount?: number | null;
     },
   ): Observable<{ data: RepairDetail }> {
     return this.http.patch<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/repairs/${id}/parts/${partId}`, payload);

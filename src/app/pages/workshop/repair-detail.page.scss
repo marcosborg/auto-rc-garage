@@ -36,6 +36,17 @@ ion-card {
   color: #203047;
 }
 
+.lock-message {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #f0d28a;
+  border-radius: 10px;
+  background: #fff8e6;
+  color: #6f4d00;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -117,6 +128,20 @@ ion-card {
   border-radius: 10px;
   background: #ffffff;
   touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.signature-image {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  border: 1px solid #cbd6e5;
+  border-radius: 10px;
+  background: #ffffff;
+  display: block;
 }
 
 .checklist-group {

@@ -8,7 +8,7 @@
       <div class="chips">
         <ion-badge color="primary">Checklist: {{ checklistPercentLabel }}</ion-badge>
         <ion-badge color="warning">Mao de obra: {{ formatMinutes(r.work_total_minutes) }}</ion-badge>
-        <ion-badge color="tertiary">Pecas: {{ r.parts_total | number:'1.2-2' }} EUR</ion-badge>
+        <ion-badge color="tertiary">Peças e serviços: {{ r.parts_total | number:'1.2-2' }} EUR</ion-badge>
       </div>
       <ion-progress-bar [value]="checklistProgress"></ion-progress-bar>
 
@@ -19,11 +19,15 @@
         <div><strong>Total mecanicos:</strong> {{ formatMinutes(r.work_total_minutes) }}</div>
       </div>
 
+      <div class="lock-message" *ngIf="!canEditRepair && editLockMessage">
+        {{ editLockMessage }}
+      </div>
+
       <div class="action-grid">
-        <ion-button size="small" (click)="runAction('startRepair')" [disabled]="submitting">Iniciar reparacao</ion-button>
-        <ion-button size="small" color="success" (click)="runAction('finishRepair')" [disabled]="submitting">Finalizar reparacao</ion-button>
-        <ion-button size="small" color="medium" (click)="runAction('startMyWork')" [disabled]="submitting">Iniciar meu trabalho</ion-button>
-        <ion-button size="small" color="dark" (click)="runAction('finishMyWork')" [disabled]="submitting">Terminar meu trabalho</ion-button>
+        <ion-button *ngIf="canStartRepair" size="small" (click)="runAction('startRepair')" [disabled]="submitting">Iniciar reparacao</ion-button>
+        <ion-button *ngIf="canStartMyWork" size="small" color="medium" (click)="runAction('startMyWork')" [disabled]="submitting">Iniciar meu trabalho</ion-button>
+        <ion-button *ngIf="canFinishMyWork" size="small" color="dark" (click)="runAction('finishMyWork')" [disabled]="submitting">Terminar meu trabalho</ion-button>
+        <ion-button *ngIf="canFinishRepair" size="small" color="success" (click)="runAction('finishRepair')" [disabled]="submitting">Finalizar reparacao</ion-button>
       </div>
 
       <ion-button
@@ -50,7 +54,7 @@
       <ion-label>Fotos</ion-label>
     </ion-segment-button>
     <ion-segment-button value="parts">
-      <ion-label>Pecas</ion-label>
+      <ion-label>Peças e serviços</ion-label>
     </ion-segment-button>
     <ion-segment-button value="history">
       <ion-label>Historico</ion-label>
@@ -75,38 +79,38 @@
 
         <ion-item>
           <ion-label position="stacked">Kms na entrada</ion-label>
-          <ion-input type="number" [(ngModel)]="form.kilometers"></ion-input>
+          <ion-input type="number" [(ngModel)]="form.kilometers" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Observacoes de entrada</ion-label>
-          <ion-textarea autoGrow="true" [(ngModel)]="form.obs_1"></ion-textarea>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.obs_1" [readonly]="!canEditRepair"></ion-textarea>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Data/hora da intervencao</ion-label>
-          <ion-input type="datetime-local" [(ngModel)]="form.timestamp"></ion-input>
+          <ion-input type="datetime-local" [(ngModel)]="form.timestamp" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Estado da intervencao</ion-label>
-          <ion-select interface="popover" [(ngModel)]="form.repair_state_id">
+          <ion-select interface="action-sheet" [(ngModel)]="form.repair_state_id" [disabled]="!canEditRepair">
             <ion-select-option [value]="null">Sem estado</ion-select-option>
             <ion-select-option *ngFor="let state of states" [value]="state.id">{{ state.name }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Previsao de conclusao</ion-label>
-          <ion-input type="date" [(ngModel)]="form.expected_completion_date"></ion-input>
+          <ion-input type="date" [(ngModel)]="form.expected_completion_date" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Descritivo do que foi feito</ion-label>
-          <ion-textarea autoGrow="true" [(ngModel)]="form.work_performed"></ion-textarea>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.work_performed" [readonly]="!canEditRepair"></ion-textarea>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Materiais usados</ion-label>
-          <ion-textarea autoGrow="true" [(ngModel)]="form.materials_used"></ion-textarea>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.materials_used" [readonly]="!canEditRepair"></ion-textarea>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Observacoes</ion-label>
-          <ion-textarea autoGrow="true" [(ngModel)]="form.obs_2"></ion-textarea>
+          <ion-textarea autoGrow="true" [(ngModel)]="form.obs_2" [readonly]="!canEditRepair"></ion-textarea>
         </ion-item>
 
         <div class="entry-sheet">
@@ -123,6 +127,13 @@
                 <strong>Rececao</strong>
                 <ion-badge [color]="hasSignature('receptionist') ? 'success' : 'warning'">{{ signatureStatus('receptionist') }}</ion-badge>
               </div>
+              <img
+                *ngIf="signatureImageSrc('receptionist') && !receptionistSignatureRemoved; else receptionistSignaturePad"
+                class="signature-image"
+                [src]="signatureImageSrc('receptionist')"
+                alt="Assinatura da rececao"
+              >
+              <ng-template #receptionistSignaturePad>
               <canvas
                 #receptionistSignatureCanvas
                 class="signature-canvas"
@@ -132,7 +143,8 @@
                 (pointercancel)="endSignature($event, 'receptionist')"
                 (pointerleave)="endSignature($event, 'receptionist')"
               ></canvas>
-              <ion-button size="small" fill="clear" color="medium" (click)="clearSignature('receptionist')">Limpar</ion-button>
+              </ng-template>
+              <ion-button *ngIf="canEditRepair" size="small" fill="clear" color="medium" (click)="clearSignature('receptionist')">Limpar</ion-button>
             </div>
 
             <div class="signature-panel">
@@ -140,6 +152,13 @@
                 <strong>Cliente</strong>
                 <ion-badge [color]="hasSignature('client') ? 'success' : 'warning'">{{ signatureStatus('client') }}</ion-badge>
               </div>
+              <img
+                *ngIf="signatureImageSrc('client') && !clientSignatureRemoved; else clientSignaturePad"
+                class="signature-image"
+                [src]="signatureImageSrc('client')"
+                alt="Assinatura do cliente"
+              >
+              <ng-template #clientSignaturePad>
               <canvas
                 #clientSignatureCanvas
                 class="signature-canvas"
@@ -149,12 +168,13 @@
                 (pointercancel)="endSignature($event, 'client')"
                 (pointerleave)="endSignature($event, 'client')"
               ></canvas>
-              <ion-button size="small" fill="clear" color="medium" (click)="clearSignature('client')">Limpar</ion-button>
+              </ng-template>
+              <ion-button *ngIf="canEditRepair" size="small" fill="clear" color="medium" (click)="clearSignature('client')">Limpar</ion-button>
             </div>
           </div>
 
           <div class="row-actions">
-            <ion-button (click)="saveSignatures()" [disabled]="savingSignatures || !hasSignature('receptionist') || !hasSignature('client')">
+            <ion-button *ngIf="canEditRepair" (click)="saveSignatures()" [disabled]="savingSignatures || !hasSignature('receptionist') || !hasSignature('client')">
               <ion-spinner *ngIf="savingSignatures" name="crescent"></ion-spinner>
               <span>{{ savingSignatures ? 'A guardar...' : 'Guardar assinaturas' }}</span>
             </ion-button>
@@ -165,7 +185,7 @@
           </div>
         </div>
 
-        <ion-button expand="block" (click)="saveAll()" [disabled]="submitting">Guardar alteracoes</ion-button>
+        <ion-button *ngIf="canEditRepair" expand="block" (click)="saveAll()" [disabled]="submitting">Guardar alteracoes</ion-button>
       </ion-card-content>
     </ion-card>
 
@@ -183,19 +203,19 @@
             <div slot="content" class="checklist-group">
               <div class="check-item" *ngFor="let item of group.items; trackBy: trackByChecklist">
                 <div class="check-head">
-                  <ion-checkbox [(ngModel)]="item.checked"></ion-checkbox>
+                  <ion-checkbox [(ngModel)]="item.checked" [disabled]="!canEditRepair"></ion-checkbox>
                   <div class="check-label">{{ item.label }}</div>
                 </div>
                 <ion-item lines="none">
                   <ion-label position="stacked">Nota</ion-label>
-                  <ion-textarea autoGrow="true" [(ngModel)]="item.note"></ion-textarea>
+                  <ion-textarea autoGrow="true" [(ngModel)]="item.note" [readonly]="!canEditRepair"></ion-textarea>
                 </ion-item>
               </div>
             </div>
           </ion-accordion>
         </ion-accordion-group>
 
-        <ion-button expand="block" (click)="saveAll()" [disabled]="submitting">Guardar checklist</ion-button>
+        <ion-button *ngIf="canEditRepair" expand="block" (click)="saveAll()" [disabled]="submitting">Guardar checklist</ion-button>
       </ion-card-content>
     </ion-card>
 
@@ -221,7 +241,7 @@
 
         <h3>Check-in</h3>
         <div class="row-actions">
-          <ion-button size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkin')">Adicionar ficheiros check-in</ion-button>
+          <ion-button *ngIf="canEditRepair" size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkin')">Adicionar ficheiros check-in</ion-button>
         </div>
         <div class="media-upload-status" *ngIf="uploadingMedia && mediaUploadCollection === 'checkin'">
           <ion-spinner name="crescent"></ion-spinner>
@@ -234,7 +254,7 @@
             <button type="button" class="photo-card" (click)="openGallery(r.checkin_photos, i, 'Check-in')">
               <img [src]="photo.url || photo.thumb" [alt]="'Check-in ' + (i + 1)">
             </button>
-            <ion-button size="small" color="danger" fill="clear" (click)="removeMedia(photo.id)">Remover</ion-button>
+            <ion-button *ngIf="canEditRepair" size="small" color="danger" fill="clear" (click)="removeMedia(photo.id)">Remover</ion-button>
           </div>
         </div>
         <ng-template #emptyCheckinPhotos>
@@ -243,7 +263,7 @@
 
         <h3>Check-out</h3>
         <div class="row-actions">
-          <ion-button size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkout')">Adicionar ficheiros check-out</ion-button>
+          <ion-button *ngIf="canEditRepair" size="small" [disabled]="uploadingMedia" (click)="openMediaPicker('checkout')">Adicionar ficheiros check-out</ion-button>
         </div>
         <div class="media-upload-status" *ngIf="uploadingMedia && mediaUploadCollection === 'checkout'">
           <ion-spinner name="crescent"></ion-spinner>
@@ -256,7 +276,7 @@
             <button type="button" class="photo-card" (click)="openGallery(r.checkout_photos, i, 'Check-out')">
               <img [src]="photo.url || photo.thumb" [alt]="'Check-out ' + (i + 1)">
             </button>
-            <ion-button size="small" color="danger" fill="clear" (click)="removeMedia(photo.id)">Remover</ion-button>
+            <ion-button *ngIf="canEditRepair" size="small" color="danger" fill="clear" (click)="removeMedia(photo.id)">Remover</ion-button>
           </div>
         </div>
         <ng-template #emptyCheckoutPhotos>
@@ -267,42 +287,42 @@
 
     <ion-card *ngSwitchCase="'parts'">
       <ion-card-header>
-        <ion-card-title>Pecas e custos</ion-card-title>
+        <ion-card-title>Peças, serviços e custos</ion-card-title>
       </ion-card-header>
       <ion-card-content>
         <ion-item>
           <ion-label position="stacked">Fornecedor</ion-label>
-          <ion-input [(ngModel)]="partDraft.supplier"></ion-input>
+          <ion-input [(ngModel)]="partDraft.supplier" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Numero fatura</ion-label>
-          <ion-input [(ngModel)]="partDraft.invoice_number"></ion-input>
+          <ion-input [(ngModel)]="partDraft.invoice_number" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
-          <ion-label position="stacked">Data</ion-label>
-          <ion-input type="date" [(ngModel)]="partDraft.part_date"></ion-input>
+          <ion-label position="stacked">Data *</ion-label>
+          <ion-input type="date" [(ngModel)]="partDraft.part_date" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
-          <ion-label position="stacked">Nome peca</ion-label>
-          <ion-input [(ngModel)]="partDraft.part_name"></ion-input>
+          <ion-label position="stacked">Nome da peça ou serviço *</ion-label>
+          <ion-input [(ngModel)]="partDraft.part_name" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Valor</ion-label>
-          <ion-input type="number" [(ngModel)]="partDraft.amount"></ion-input>
+          <ion-input type="number" [(ngModel)]="partDraft.amount" [readonly]="!canEditRepair"></ion-input>
         </ion-item>
-        <div class="row-actions">
-          <ion-button (click)="savePart()" [disabled]="submitting">{{ editingPartId ? 'Atualizar peca' : 'Adicionar peca' }}</ion-button>
+        <div class="row-actions" *ngIf="canEditRepair">
+          <ion-button (click)="savePart()" [disabled]="submitting">{{ editingPartId ? 'Atualizar' : 'Adicionar' }}</ion-button>
           <ion-button *ngIf="editingPartId" fill="outline" color="medium" (click)="cancelEditPart()">Cancelar</ion-button>
         </div>
 
         <ion-list>
           <ion-item *ngFor="let p of r.parts; trackBy: trackByPart">
             <ion-label>
-              <h3>{{ p.part_name || 'Sem nome' }} - {{ p.amount | number:'1.2-2' }} EUR</h3>
+              <h3>{{ p.part_name || 'Sem nome' }} - {{ p.amount !== null ? (p.amount | number:'1.2-2') + ' EUR' : 'valor por definir' }}</h3>
               <p>{{ p.supplier || '-' }} | {{ p.invoice_number || '-' }} | {{ p.part_date || '-' }}</p>
             </ion-label>
-            <ion-button fill="clear" color="medium" (click)="startEditPart(p)">Editar</ion-button>
-            <ion-button fill="clear" color="danger" (click)="deletePart(p.id)">Remover</ion-button>
+            <ion-button *ngIf="canEditRepair" fill="clear" color="medium" (click)="startEditPart(p)">Editar</ion-button>
+            <ion-button *ngIf="canEditRepair" fill="clear" color="danger" (click)="deletePart(p.id)">Remover</ion-button>
           </ion-item>
         </ion-list>
       </ion-card-content>

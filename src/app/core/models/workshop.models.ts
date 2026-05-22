@@ -30,7 +30,7 @@ export interface RepairPart {
   invoice_number: string | null;
   part_date: string | null;
   part_name: string;
-  amount: number;
+  amount: number | null;
 }
 
 export interface RepairWorkLog {
@@ -46,6 +46,7 @@ export interface RepairMedia {
   id: number;
   url: string;
   thumb: string;
+  data_url?: string;
 }
 
 export interface RepairChecklistItem {
