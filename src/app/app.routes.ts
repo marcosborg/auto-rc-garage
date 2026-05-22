@@ -26,6 +26,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/workshop/new-intervention.page').then((m) => m.NewInterventionPage),
       },
       {
+        path: 'garage-vehicles',
+        loadComponent: () => import('./pages/workshop/garage-vehicles.page').then((m) => m.GarageVehiclesPage),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'repairs',

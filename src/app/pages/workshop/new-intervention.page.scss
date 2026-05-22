@@ -9,3 +9,12 @@
   place-items: center;
   margin: 12px 0;
 }
+
+ion-thumbnail {
+  --border-radius: 8px;
+  --size: 56px;
+}
+
+ion-thumbnail img {
+  object-fit: cover;
+}

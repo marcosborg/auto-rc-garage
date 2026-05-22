@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  GarageVehicle,
+  PaginatedResponse,
   RepairDetail,
   RepairListItem,
   RepairState,
@@ -22,6 +24,16 @@ export class WorkshopApiService {
       params: {
         status,
         search,
+      },
+    });
+  }
+
+  getGarageVehicles(search = '', page = 1, perPage = 10): Observable<PaginatedResponse<GarageVehicle>> {
+    return this.http.get<PaginatedResponse<GarageVehicle>>(`${environment.apiBaseUrl}/mobile/workshop/garage-vehicles`, {
+      params: {
+        search,
+        page,
+        per_page: perPage,
       },
     });
   }

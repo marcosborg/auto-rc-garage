@@ -16,6 +16,9 @@
 
   <ion-list>
     <ion-item *ngFor="let vehicle of vehicles">
+      <ion-thumbnail slot="start" *ngIf="coverPhotoSrc(vehicle)">
+        <img [src]="coverPhotoSrc(vehicle)" [alt]="vehicle.license || vehicle.foreign_license || 'Viatura'">
+      </ion-thumbnail>
       <ion-label>
         <h3>{{ vehicle.license || vehicle.foreign_license }}</h3>
         <p>{{ vehicle.brand }} {{ vehicle.model }}</p>

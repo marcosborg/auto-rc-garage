@@ -18,10 +18,11 @@ import {
   IonSplitPane,
   IonTitle,
   IonToolbar,
+  MenuController,
   ToastController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { carSportOutline, listOutline, logOutOutline, notificationsOutline } from 'ionicons/icons';
+import { businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline } from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
 import { ChecklistAlertService } from '../../core/services/checklist-alert.service';
 
@@ -55,19 +56,26 @@ export class WorkshopShellPage {
   private readonly router = inject(Router);
   private readonly alert = inject(AlertController);
   private readonly toast = inject(ToastController);
+  private readonly menu = inject(MenuController);
   readonly checklistAlert = inject(ChecklistAlertService);
 
   user = this.auth.user;
 
   constructor() {
-    addIcons({ carSportOutline, listOutline, logOutOutline, notificationsOutline });
+    addIcons({ businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline });
   }
 
   openChecklistAlert(): void {
     this.checklistAlert.requestOpen();
   }
 
+  closeMenu(): void {
+    this.menu.close();
+  }
+
   async logout(): Promise<void> {
+    this.closeMenu();
+
     const alert = await this.alert.create({
       header: 'Terminar sessão?',
       buttons: [

@@ -14,6 +14,7 @@ import {
   IonLabel,
   IonList,
   IonSpinner,
+  IonThumbnail,
   ToastController,
 } from '@ionic/angular/standalone';
 import { finalize } from 'rxjs';
@@ -39,6 +40,7 @@ import { WorkshopApiService } from '../../core/services/workshop-api.service';
     IonList,
     IonButton,
     IonSpinner,
+    IonThumbnail,
   ],
 })
 export class NewInterventionPage {
@@ -93,5 +95,9 @@ export class NewInterventionPage {
           await toast.present();
         },
       });
+  }
+
+  coverPhotoSrc(vehicle: VehicleLookup): string {
+    return vehicle.cover_photo?.url || vehicle.cover_photo?.thumb || '';
   }
 }

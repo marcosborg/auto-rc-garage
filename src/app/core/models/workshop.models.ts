@@ -134,4 +134,37 @@ export interface VehicleLookup {
   foreign_license: string | null;
   brand: string | null;
   model: string | null;
+  cover_photo: RepairMedia | null;
+}
+
+export interface GarageVehicleRepair {
+  id: number;
+  state: string;
+  is_open: boolean;
+  timestamp: string | null;
+  repair_started_at: string | null;
+  repair_finished_at: string | null;
+  repair_duration_minutes: number | null;
+  checklist_percentage: number;
+}
+
+export interface GarageVehicle {
+  id: number;
+  license: string | null;
+  foreign_license: string | null;
+  brand: string | null;
+  model: string | null;
+  kilometers: number | null;
+  cover_photo: RepairMedia | null;
+  repairs: GarageVehicleRepair[];
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
 }

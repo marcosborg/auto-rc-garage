@@ -1,0 +1,77 @@
+<ion-content class="page-content">
+  <div class="page-header">
+    <h2>Viaturas em oficina</h2>
+  </div>
+
+  <ion-searchbar
+    [(ngModel)]="search"
+    placeholder="Pesquisar por matrícula/modelo"
+    [debounce]="400"
+    (ionInput)="onSearchChange()"
+    (ionClear)="load()"
+    (keyup.enter)="load()"
+  ></ion-searchbar>
+
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="loading && vehicles.length === 0" class="loading-wrap">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <ion-card class="vehicle-card" *ngFor="let vehicle of vehicles; trackBy: trackByVehicle">
+      <ion-card-content>
+        <button type="button" class="vehicle-card-main" (click)="toggleVehicle(vehicle)">
+          <div class="vehicle-cover">
+            <img *ngIf="coverPhotoSrc(vehicle); else emptyCover" [src]="coverPhotoSrc(vehicle)" [alt]="vehicleLabel(vehicle)">
+            <ng-template #emptyCover>
+              <div class="vehicle-cover-placeholder">
+                <ion-icon name="car-sport-outline"></ion-icon>
+              </div>
+            </ng-template>
+          </div>
+
+          <div class="vehicle-summary">
+            <div class="vehicle-title-row">
+              <h3>{{ vehicleLabel(vehicle) }}</h3>
+              <ion-icon [name]="expandedVehicleId === vehicle.id ? 'chevron-down-outline' : 'chevron-forward-outline'"></ion-icon>
+            </div>
+            <div class="vehicle-meta">
+              <span>{{ vehicle.repairs.length }} intervenções</span>
+              <span>{{ vehicle.kilometers !== null ? vehicle.kilometers + ' km' : 'kms por definir' }}</span>
+            </div>
+          </div>
+        </button>
+
+        <ion-list class="repair-history" *ngIf="expandedVehicleId === vehicle.id">
+          <ion-item *ngFor="let repair of vehicle.repairs; trackBy: trackByRepair">
+            <ion-label>
+              <h3>#{{ repair.id }} - {{ repair.state }}</h3>
+              <p>Entrada: {{ formatDate(repair.timestamp || repair.repair_started_at) }} | Checklist: {{ repair.checklist_percentage }}%</p>
+              <p>Duração: {{ formatDuration(repair.repair_duration_minutes) }}</p>
+            </ion-label>
+            <ion-badge [color]="repair.is_open ? 'warning' : 'success'">
+              {{ repair.is_open ? 'Aberta' : 'Fechada' }}
+            </ion-badge>
+            <ion-button fill="clear" slot="end" (click)="openRepair(repair, $event)" aria-label="Abrir intervenção">
+              <ion-icon name="open-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+          <ion-item *ngIf="vehicle.repairs.length === 0" lines="none">
+            <ion-label>Sem histórico de intervenções.</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-item *ngIf="vehicles.length === 0" lines="none">
+      <ion-label>Nenhuma viatura com intervenções.</ion-label>
+    </ion-item>
+  </ng-container>
+
+  <ion-infinite-scroll threshold="120px" [disabled]="!hasMore" (ionInfinite)="loadMore($event)">
+    <ion-infinite-scroll-content loadingSpinner="crescent"></ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+</ion-content>
