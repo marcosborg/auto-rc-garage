@@ -17,6 +17,10 @@ export interface RepairListItem {
   repair_started_at: string | null;
   repair_finished_at: string | null;
   repair_duration_minutes: number | null;
+  cover_photo: RepairMedia | null;
+  vehicle?: {
+    initial_photos?: RepairMedia[];
+  };
 }
 
 export interface RepairState {

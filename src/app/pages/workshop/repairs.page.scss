@@ -17,15 +17,126 @@
   font-size: 1.3rem;
 }
 
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #546170;
-}
-
 .loading-wrap {
   display: grid;
   place-items: center;
   padding: 30px 0;
+}
+
+.repair-card {
+  margin: 12px 0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(22, 35, 54, 0.08);
+  overflow: hidden;
+}
+
+.repair-card ion-card-content {
+  padding: 10px;
+}
+
+.repair-card-layout {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  min-height: 92px;
+}
+
+.repair-cover,
+.repair-cover-placeholder {
+  width: 104px;
+  height: 92px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.repair-cover {
+  background: #e9eef5;
+}
+
+.repair-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.repair-cover-placeholder {
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8e0ea;
+  background: #f4f7fb;
+  color: #7a8798;
+}
+
+.repair-cover-placeholder ion-icon {
+  font-size: 2rem;
+}
+
+.repair-summary {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.repair-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.repair-title-row h3 {
+  margin: 0;
+  color: #182437;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.repair-title-row ion-badge {
+  flex: 0 0 auto;
+}
+
+.repair-summary p {
+  margin: 6px 0;
+  color: #5a6676;
+  font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repair-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #6b7686;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.repair-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .repair-card-layout {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  .repair-cover,
+  .repair-cover-placeholder {
+    width: 88px;
+  }
 }

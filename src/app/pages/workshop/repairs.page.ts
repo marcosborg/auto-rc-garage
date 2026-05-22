@@ -7,10 +7,8 @@ import {
   IonButton,
   IonCard,
   IonCardContent,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
   IonContent,
+  IonIcon,
   IonItem,
   IonLabel,
   IonRefresher,
@@ -21,6 +19,8 @@ import {
   IonSpinner,
   ToastController,
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { carSportOutline } from 'ionicons/icons';
 import { finalize } from 'rxjs';
 import { RepairListItem } from '../../core/models/workshop.models';
 import { WorkshopApiService } from '../../core/services/workshop-api.service';
@@ -41,11 +41,9 @@ import { WorkshopApiService } from '../../core/services/workshop-api.service';
     IonLabel,
     IonButton,
     IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardSubtitle,
     IonCardContent,
     IonBadge,
+    IonIcon,
     IonItem,
     IonSpinner,
     IonRefresher,
@@ -61,6 +59,10 @@ export class RepairsPage {
   status: 'open' | 'all' = 'open';
   search = '';
   loading = false;
+
+  constructor() {
+    addIcons({ carSportOutline });
+  }
 
   ionViewWillEnter(): void {
     this.load();
@@ -91,6 +93,37 @@ export class RepairsPage {
 
   openRepair(repair: RepairListItem): void {
     this.router.navigate(['/workshop/repairs', repair.id]);
+  }
+
+  coverPhotoSrc(repair: RepairListItem): string {
+    const photo = repair.cover_photo || repair.vehicle?.initial_photos?.[0] || null;
+    return photo?.url || photo?.thumb || '';
+  }
+
+  formatDuration(minutes: number | null): string {
+    if (minutes === null) {
+      return '';
+    }
+
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remaining = minutes % 60;
+    return remaining ? `${hours}h ${remaining}m` : `${hours}h`;
+  }
+
+  formatListDate(value: string | null): string {
+    if (!value) {
+      return 'Sem data';
+    }
+
+    return new Date(value.replace(' ', 'T')).toLocaleDateString('pt-PT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+    });
   }
 
   onStatusChange(value: string | number | null | undefined): void {

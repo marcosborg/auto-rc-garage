@@ -25,19 +25,33 @@
   </div>
 
   <ng-container *ngIf="!loading">
-    <ion-card *ngFor="let repair of repairs" button (click)="openRepair(repair)">
-      <ion-card-header>
-        <ion-card-title>{{ repair.vehicle_label || ('Intervenção #' + repair.id) }}</ion-card-title>
-        <ion-card-subtitle>#{{ repair.id }} - {{ repair.state }}</ion-card-subtitle>
-      </ion-card-header>
+    <ion-card class="repair-card" *ngFor="let repair of repairs" button (click)="openRepair(repair)">
       <ion-card-content>
-        <div class="meta-row">
-          <ion-badge [color]="repair.is_open ? 'warning' : 'success'">
-            {{ repair.is_open ? 'Aberta' : 'Fechada' }}
-          </ion-badge>
-          <span *ngIf="repair.repair_duration_minutes !== null">
-            {{ repair.repair_duration_minutes }} min
-          </span>
+        <div class="repair-card-layout">
+          <div class="repair-cover">
+            <img *ngIf="coverPhotoSrc(repair); else emptyCover" [src]="coverPhotoSrc(repair)" [alt]="repair.vehicle_label || 'Viatura'">
+            <ng-template #emptyCover>
+              <div class="repair-cover-placeholder">
+                <ion-icon name="car-sport-outline"></ion-icon>
+              </div>
+            </ng-template>
+          </div>
+
+          <div class="repair-summary">
+            <div class="repair-title-row">
+              <h3>{{ repair.vehicle_label || ('Intervenção #' + repair.id) }}</h3>
+              <ion-badge [color]="repair.is_open ? 'warning' : 'success'">
+                {{ repair.is_open ? 'Aberta' : 'Fechada' }}
+              </ion-badge>
+            </div>
+
+            <p>#{{ repair.id }} - {{ repair.state }}</p>
+
+            <div class="repair-meta">
+              <span>{{ formatListDate(repair.timestamp) }}</span>
+              <span *ngIf="repair.repair_duration_minutes !== null">{{ formatDuration(repair.repair_duration_minutes) }}</span>
+            </div>
+          </div>
         </div>
       </ion-card-content>
     </ion-card>
