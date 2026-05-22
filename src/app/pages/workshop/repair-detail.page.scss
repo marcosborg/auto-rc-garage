@@ -144,6 +144,20 @@ ion-card {
   display: block;
 }
 
+.fuel-level-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 12px;
+}
+
+.fuel-level-row span {
+  color: #203047;
+  font-weight: 700;
+  text-align: right;
+}
+
 .checklist-group {
   padding: 8px 6px 6px;
 }

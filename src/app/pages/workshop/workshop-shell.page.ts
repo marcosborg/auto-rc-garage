@@ -1,7 +1,10 @@
 ﻿import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import {
   AlertController,
+  IonBadge,
+  IonButton,
   IonButtons,
   IonContent,
   IonHeader,
@@ -18,8 +21,9 @@ import {
   ToastController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { carSportOutline, listOutline, logOutOutline } from 'ionicons/icons';
+import { carSportOutline, listOutline, logOutOutline, notificationsOutline } from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
+import { ChecklistAlertService } from '../../core/services/checklist-alert.service';
 
 @Component({
   selector: 'app-workshop-shell',
@@ -27,6 +31,7 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrls: ['./workshop-shell.page.scss'],
   standalone: true,
   imports: [
+    CommonModule,
     RouterLink,
     IonRouterOutlet,
     IonSplitPane,
@@ -40,6 +45,8 @@ import { AuthService } from '../../core/services/auth.service';
     IonToolbar,
     IonTitle,
     IonButtons,
+    IonButton,
+    IonBadge,
     IonMenuButton,
   ],
 })
@@ -48,11 +55,16 @@ export class WorkshopShellPage {
   private readonly router = inject(Router);
   private readonly alert = inject(AlertController);
   private readonly toast = inject(ToastController);
+  readonly checklistAlert = inject(ChecklistAlertService);
 
   user = this.auth.user;
 
   constructor() {
-    addIcons({ carSportOutline, listOutline, logOutOutline });
+    addIcons({ carSportOutline, listOutline, logOutOutline, notificationsOutline });
+  }
+
+  openChecklistAlert(): void {
+    this.checklistAlert.requestOpen();
   }
 
   async logout(): Promise<void> {

@@ -1,5 +1,5 @@
 ﻿import { CommonModule } from '@angular/common';
-import { AfterViewChecked, Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
@@ -25,6 +25,7 @@ import {
   IonList,
   IonModal,
   IonProgressBar,
+  IonRange,
   IonSegment,
   IonSegmentButton,
   IonSelect,
@@ -37,7 +38,7 @@ import {
   ToastController,
 } from '@ionic/angular/standalone';
 import jsPDF from 'jspdf';
-import { finalize, firstValueFrom } from 'rxjs';
+import { Subscription, finalize, firstValueFrom } from 'rxjs';
 import {
   RepairChecklistItem,
   RepairDetail,
@@ -46,6 +47,7 @@ import {
   RepairState,
 } from '../../core/models/workshop.models';
 import { AuthService } from '../../core/services/auth.service';
+import { ChecklistAlertService } from '../../core/services/checklist-alert.service';
 import { WorkshopApiService } from '../../core/services/workshop-api.service';
 
 type RepairSection = 'overview' | 'checklist' | 'media' | 'parts' | 'history';
@@ -86,9 +88,10 @@ type SignatureRole = 'receptionist' | 'client';
     IonAccordion,
     IonCheckbox,
     IonProgressBar,
+    IonRange,
   ],
 })
-export class RepairDetailPage implements AfterViewChecked {
+export class RepairDetailPage implements AfterViewChecked, OnDestroy {
   @ViewChild('receptionistSignatureCanvas') receptionistSignatureCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('clientSignatureCanvas') clientSignatureCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('checkinCameraPicker') checkinCameraPicker?: ElementRef<HTMLInputElement>;
@@ -100,6 +103,7 @@ export class RepairDetailPage implements AfterViewChecked {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly checklistAlert = inject(ChecklistAlertService);
   private readonly workshopApi = inject(WorkshopApiService);
   private readonly toast = inject(ToastController);
   private readonly actionSheet = inject(ActionSheetController);
@@ -125,6 +129,9 @@ export class RepairDetailPage implements AfterViewChecked {
   form = {
     name: '',
     kilometers: null as number | null,
+    kilometers_out: null as number | null,
+    fuel_level_in_percentage: null as number | null,
+    fuel_level_percentage: null as number | null,
     obs_1: '',
     obs_2: '',
     work_performed: '',
@@ -144,6 +151,22 @@ export class RepairDetailPage implements AfterViewChecked {
   galleryTitle = 'Fotos';
   galleryPhotos: RepairMedia[] = [];
   galleryIndex = 0;
+  isUncheckedChecklistModalOpen = false;
+
+  private readonly checklistAlertSubscription: Subscription;
+
+  constructor() {
+    this.checklistAlertSubscription = this.checklistAlert.openRequested$.subscribe(() => {
+      if (this.uncheckedChecklistItems.length > 0) {
+        this.openUncheckedChecklistModal();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.checklistAlertSubscription.unsubscribe();
+    this.checklistAlert.reset();
+  }
 
   ionViewWillEnter(): void {
     this.load();
@@ -193,6 +216,9 @@ export class RepairDetailPage implements AfterViewChecked {
 
     this.form.name = data.name ?? '';
     this.form.kilometers = data.kilometers ?? null;
+    this.form.kilometers_out = data.kilometers_out ?? null;
+    this.form.fuel_level_in_percentage = data.fuel_level_in_percentage ?? null;
+    this.form.fuel_level_percentage = data.fuel_level_percentage ?? null;
     this.form.obs_1 = data.obs_1 ?? '';
     this.form.obs_2 = data.obs_2 ?? '';
     this.form.work_performed = data.work_performed ?? '';
@@ -210,6 +236,7 @@ export class RepairDetailPage implements AfterViewChecked {
       groups[item.group].push(cloned);
     }
     this.checklistGroups = Object.keys(groups).map((name) => ({ name, items: groups[name] }));
+    this.updateChecklistAlert();
 
     this.partDraft = this.emptyPartDraft();
     this.editingPartId = null;
@@ -230,6 +257,26 @@ export class RepairDetailPage implements AfterViewChecked {
 
   get checklistPercentLabel(): string {
     return `${Math.round(this.checklistProgress * 100)}%`;
+  }
+
+  get uncheckedChecklistItems(): RepairChecklistItem[] {
+    return Object.values(this.checklistMap).filter((item) => !item.checked);
+  }
+
+  openUncheckedChecklistModal(): void {
+    this.isUncheckedChecklistModalOpen = true;
+  }
+
+  closeUncheckedChecklistModal(): void {
+    this.isUncheckedChecklistModalOpen = false;
+  }
+
+  onChecklistChanged(): void {
+    this.updateChecklistAlert();
+  }
+
+  private updateChecklistAlert(): void {
+    this.checklistAlert.setUncheckedCount(this.uncheckedChecklistItems.length);
   }
 
   get repairStarted(): boolean {
@@ -769,8 +816,11 @@ export class RepairDetailPage implements AfterViewChecked {
     addLine('Versao', repair.vehicle.version);
     addLine('Ano/Mes', `${repair.vehicle.year ?? '-'}/${repair.vehicle.month ?? '-'}`);
     addLine('Combustivel', repair.vehicle.fuel);
+    addLine('Combustivel entrada', repair.fuel_level_in_percentage !== null ? `${repair.fuel_level_in_percentage}%` : '-');
+    addLine('Combustivel saida', repair.fuel_level_percentage !== null ? `${repair.fuel_level_percentage}%` : '-');
     addLine('Cor', repair.vehicle.color);
     addLine('Kms entrada', repair.kilometers ?? repair.vehicle.kilometers);
+    addLine('Kms saida', repair.kilometers_out);
     addLine('Data/hora', repair.timestamp ? this.formatDateTime(repair.timestamp) : '-');
     addTextBlock('Observacoes de entrada', repair.obs_1);
     addTextBlock('Observacoes', repair.obs_2);
@@ -950,6 +1000,9 @@ export class RepairDetailPage implements AfterViewChecked {
     const payload: Record<string, unknown> = {
       name: this.form.name || null,
       kilometers: this.form.kilometers ?? null,
+      kilometers_out: this.form.kilometers_out ?? null,
+      fuel_level_in_percentage: this.form.fuel_level_in_percentage ?? null,
+      fuel_level_percentage: this.form.fuel_level_percentage ?? null,
       obs_1: this.form.obs_1 || null,
       obs_2: this.form.obs_2 || null,
       work_performed: this.form.work_performed || null,

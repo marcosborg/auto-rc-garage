@@ -99,6 +99,9 @@ export interface RepairDetail {
   };
   name: string | null;
   kilometers: number | null;
+  kilometers_out: number | null;
+  fuel_level_in_percentage: number | null;
+  fuel_level_percentage: number | null;
   obs_1: string | null;
   obs_2: string | null;
   checklist_percentage: number;

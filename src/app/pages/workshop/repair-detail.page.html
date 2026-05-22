@@ -6,7 +6,7 @@
     </ion-card-header>
     <ion-card-content>
       <div class="chips">
-        <ion-badge color="primary">Checklist: {{ checklistPercentLabel }}</ion-badge>
+        <ion-badge color="primary" (click)="openUncheckedChecklistModal()">Checklist: {{ checklistPercentLabel }}</ion-badge>
         <ion-badge color="warning">Mao de obra: {{ formatMinutes(r.work_total_minutes) }}</ion-badge>
         <ion-badge color="tertiary">Peças e serviços: {{ r.parts_total | number:'1.2-2' }} EUR</ion-badge>
       </div>
@@ -80,6 +80,38 @@
         <ion-item>
           <ion-label position="stacked">Kms na entrada</ion-label>
           <ion-input type="number" [(ngModel)]="form.kilometers" [readonly]="!canEditRepair"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Combustível na entrada</ion-label>
+          <div class="fuel-level-row">
+            <ion-range
+              min="0"
+              max="100"
+              step="5"
+              snaps="true"
+              [disabled]="!canEditRepair"
+              [(ngModel)]="form.fuel_level_in_percentage"
+            ></ion-range>
+            <span>{{ form.fuel_level_in_percentage !== null ? form.fuel_level_in_percentage + '%' : '-' }}</span>
+          </div>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Kms de saída</ion-label>
+          <ion-input type="number" [(ngModel)]="form.kilometers_out" [readonly]="!canEditRepair"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Combustível na saída</ion-label>
+          <div class="fuel-level-row">
+            <ion-range
+              min="0"
+              max="100"
+              step="5"
+              snaps="true"
+              [disabled]="!canEditRepair"
+              [(ngModel)]="form.fuel_level_percentage"
+            ></ion-range>
+            <span>{{ form.fuel_level_percentage !== null ? form.fuel_level_percentage + '%' : '-' }}</span>
+          </div>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">Observacoes de entrada</ion-label>
@@ -203,7 +235,7 @@
             <div slot="content" class="checklist-group">
               <div class="check-item" *ngFor="let item of group.items; trackBy: trackByChecklist">
                 <div class="check-head">
-                  <ion-checkbox [(ngModel)]="item.checked" [disabled]="!canEditRepair"></ion-checkbox>
+                  <ion-checkbox [(ngModel)]="item.checked" [disabled]="!canEditRepair" (ionChange)="onChecklistChanged()"></ion-checkbox>
                   <div class="check-label">{{ item.label }}</div>
                 </div>
                 <ion-item lines="none">
@@ -387,6 +419,32 @@
           <img [src]="photo.url || photo.thumb" alt="Foto da intervencao">
         </div>
       </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="isUncheckedChecklistModalOpen" (didDismiss)="closeUncheckedChecklistModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Checklist por verificar</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeUncheckedChecklistModal()">Fechar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="unchecked-checklist-content">
+      <ion-list *ngIf="uncheckedChecklistItems.length; else completeChecklist">
+        <ion-item *ngFor="let item of uncheckedChecklistItems; trackBy: trackByChecklist">
+          <ion-label>
+            <h3>{{ item.label }}</h3>
+            <p>{{ item.group }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+      <ng-template #completeChecklist>
+        <div class="empty-state">Checklist completa.</div>
+      </ng-template>
     </ion-content>
   </ng-template>
 </ion-modal>

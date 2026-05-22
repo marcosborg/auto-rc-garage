@@ -16,3 +16,17 @@
   font-size: 0.82rem;
   opacity: 0.85;
 }
+
+.checklist-alert-button {
+  position: relative;
+}
+
+.checklist-alert-button ion-badge {
+  position: absolute;
+  top: 1px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 2px 4px;
+  font-size: 0.65rem;
+}

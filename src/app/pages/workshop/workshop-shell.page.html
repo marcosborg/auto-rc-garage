@@ -34,6 +34,12 @@
           <ion-menu-button></ion-menu-button>
         </ion-buttons>
         <ion-title>Auto RC Garage</ion-title>
+        <ion-buttons slot="end" *ngIf="checklistAlert.uncheckedCount() > 0">
+          <ion-button class="checklist-alert-button" (click)="openChecklistAlert()">
+            <ion-icon name="notifications-outline"></ion-icon>
+            <ion-badge color="danger">{{ checklistAlert.uncheckedCount() }}</ion-badge>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="false">
