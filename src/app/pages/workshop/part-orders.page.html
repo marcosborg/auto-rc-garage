@@ -1,0 +1,122 @@
+<ion-content class="page-content">
+  <div class="page-header">
+    <h2>Encomendas</h2>
+    <ion-button size="small" (click)="showForm = !showForm">{{ showForm ? 'Fechar' : 'Novo' }}</ion-button>
+  </div>
+
+  <ion-card *ngIf="showForm">
+    <ion-card-header>
+      <ion-card-title>Novo pedido de peças</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-searchbar [(ngModel)]="vehicleSearch" placeholder="Associar viatura (opcional)" [debounce]="400" (ionInput)="searchVehicles()" (ionClear)="searchVehicles()"></ion-searchbar>
+      <ion-list *ngIf="vehicles.length">
+        <ion-item>
+          <ion-select label="Viatura" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="form.vehicle_id">
+            <ion-select-option [value]="null">Sem viatura</ion-select-option>
+            <ion-select-option *ngFor="let vehicle of vehicles" [value]="vehicle.id">
+              {{ vehicle.license || vehicle.foreign_license || ('#' + vehicle.id) }} {{ vehicle.brand }} {{ vehicle.model }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+      </ion-list>
+
+      <ion-item>
+        <ion-select label="Fornecedor" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="form.suplier_id">
+          <ion-select-option [value]="null">Por definir</ion-select-option>
+          <ion-select-option *ngFor="let supplier of suppliers" [value]="supplier.id">{{ supplier.name }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-button class="supplier-toggle" fill="clear" size="small" (click)="showSupplierForm = !showSupplierForm">
+        {{ showSupplierForm ? 'Cancelar fornecedor' : 'Adicionar fornecedor' }}
+      </ion-button>
+
+      <div class="supplier-editor" *ngIf="showSupplierForm">
+        <ion-item>
+          <ion-input label="Nome do fornecedor" labelPlacement="stacked" [(ngModel)]="supplierForm.name"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input type="email" label="Email" labelPlacement="stacked" [(ngModel)]="supplierForm.email"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Telefone" labelPlacement="stacked" [(ngModel)]="supplierForm.phone"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Telemovel" labelPlacement="stacked" [(ngModel)]="supplierForm.mobile"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="NIF" labelPlacement="stacked" [(ngModel)]="supplierForm.nif"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-textarea label="Notas" labelPlacement="stacked" autoGrow="true" [(ngModel)]="supplierForm.notes"></ion-textarea>
+        </ion-item>
+        <ion-button expand="block" fill="outline" [disabled]="creatingSupplier" (click)="submitSupplier()">
+          {{ creatingSupplier ? 'A gravar...' : 'Guardar fornecedor' }}
+        </ion-button>
+      </div>
+      <ion-item>
+        <ion-select label="Prioridade" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="form.priority">
+          <ion-select-option value="low">Baixa</ion-select-option>
+          <ion-select-option value="normal">Normal</ion-select-option>
+          <ion-select-option value="urgent">Urgente</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-input type="date" label="Data prevista" labelPlacement="stacked" [(ngModel)]="form.expected_delivery_date"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input type="number" label="Prazo dias" labelPlacement="stacked" [(ngModel)]="form.requested_delivery_days"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-textarea label="Notas" labelPlacement="stacked" autoGrow="true" [(ngModel)]="form.notes"></ion-textarea>
+      </ion-item>
+
+      <div class="item-editor" *ngFor="let item of form.items; let i = index">
+        <ion-item>
+          <ion-input label="Referência" labelPlacement="stacked" [(ngModel)]="item.reference"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Peça" labelPlacement="stacked" [(ngModel)]="item.description"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input type="number" label="Quantidade" labelPlacement="stacked" [(ngModel)]="item.quantity"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-textarea label="Observações" labelPlacement="stacked" autoGrow="true" [(ngModel)]="item.observations"></ion-textarea>
+        </ion-item>
+        <ion-button fill="clear" color="danger" (click)="removeItem(i)" *ngIf="form.items.length > 1">Remover peça</ion-button>
+      </div>
+
+      <ion-button fill="outline" expand="block" (click)="addItem()">Adicionar peça</ion-button>
+      <ion-button expand="block" color="danger" [disabled]="creating" (click)="submit()">{{ creating ? 'A gravar...' : 'Criar pedido' }}</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-searchbar [(ngModel)]="search" placeholder="Pesquisar encomendas" [debounce]="400" (ionInput)="load()" (ionClear)="load()"></ion-searchbar>
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <ion-card *ngFor="let order of orders; trackBy: trackByOrder">
+      <ion-card-content>
+        <div class="order-title">
+          <h3>#{{ order.id }} {{ order.vehicle_label || 'Sem viatura' }}</h3>
+          <ion-badge [color]="badgeColor(order)">{{ order.received_badge }}</ion-badge>
+        </div>
+        <p>{{ order.items.length }} peça(s): {{ order.items[0]?.description || '-' }}</p>
+        <p>Fornecedor: {{ order.supplier || 'por definir' }}</p>
+        <p>Estado: {{ order.status_label }} | Prioridade: {{ priorityLabel(order.priority) }}</p>
+        <p>Prevista: {{ formatDate(order.expected_delivery_date) }} | Recebida: {{ formatDate(order.actual_delivery_date) }}</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-item *ngIf="orders.length === 0" lines="none">
+      <ion-label>Sem encomendas de peças.</ion-label>
+    </ion-item>
+  </ng-container>
+</ion-content>

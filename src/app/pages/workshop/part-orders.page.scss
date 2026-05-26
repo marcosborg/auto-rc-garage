@@ -1,0 +1,67 @@
+.page-content {
+  --background: #f3f6fa;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 4px;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  color: #10213a;
+}
+
+ion-card {
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(16, 33, 58, 0.08);
+}
+
+.item-editor {
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  margin: 14px 0;
+  padding: 6px 0;
+  background: #fff;
+}
+
+.supplier-toggle {
+  margin: 4px 0 10px;
+}
+
+.supplier-editor {
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  margin: 0 0 14px;
+  padding: 6px 0 10px;
+  background: #fff;
+}
+
+.order-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.order-title h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #10213a;
+}
+
+p {
+  margin: 4px 0;
+  color: #5d6b7d;
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}

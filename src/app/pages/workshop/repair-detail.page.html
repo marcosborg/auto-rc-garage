@@ -375,6 +375,23 @@
           </ion-item>
         </ion-list>
 
+        <h3>Encomendas de peças</h3>
+        <ion-list>
+          <ion-item *ngFor="let order of r.part_orders">
+            <ion-label>
+              <h3>#{{ order.id }} - {{ order.status_label }}</h3>
+              <p>{{ order.items_summary || 'Sem peças descritas' }}</p>
+              <p>Fornecedor: {{ order.supplier || 'por definir' }} | Prevista: {{ order.expected_delivery_date || '-' }} | Recebida: {{ order.actual_delivery_date || '-' }}</p>
+            </ion-label>
+            <ion-badge [color]="order.received_badge === 'chegou' ? 'success' : (order.received_badge === 'atrasado' ? 'danger' : (order.received_badge === 'parcial' ? 'warning' : 'medium'))">
+              {{ order.received_badge }}
+            </ion-badge>
+          </ion-item>
+          <ion-item *ngIf="r.part_orders.length === 0" lines="none">
+            <ion-label>Sem encomendas associadas a esta viatura.</ion-label>
+          </ion-item>
+        </ion-list>
+
         <h3>Totais por mecanico</h3>
         <ion-list>
           <ion-item *ngFor="let total of r.mechanic_totals">

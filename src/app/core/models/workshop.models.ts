@@ -70,6 +70,20 @@ export interface RepairHistoryItem {
   is_current: boolean;
 }
 
+export interface PartOrderHistoryItem {
+  id: number;
+  repair_id: number | null;
+  supplier: string | null;
+  status: string;
+  status_label: string;
+  received_badge: 'chegou' | 'parcial' | 'pendente' | 'atrasado';
+  priority: 'low' | 'normal' | 'urgent';
+  expected_delivery_date: string | null;
+  actual_delivery_date: string | null;
+  items_count: number;
+  items_summary: string;
+}
+
 export interface MechanicTotal {
   user_id: number;
   name: string;
@@ -78,6 +92,7 @@ export interface MechanicTotal {
 
 export interface RepairDetail {
   id: number;
+  work_type: 'workshop' | 'paint';
   vehicle: {
     id: number;
     license: string | null;
@@ -126,6 +141,7 @@ export interface RepairDetail {
   mechanic_totals: MechanicTotal[];
   can_create_new_intervention: boolean;
   vehicle_repairs: RepairHistoryItem[];
+  part_orders: PartOrderHistoryItem[];
 }
 
 export interface VehicleLookup {
@@ -136,6 +152,8 @@ export interface VehicleLookup {
   model: string | null;
   cover_photo: RepairMedia | null;
 }
+
+export type RepairWorkType = 'workshop' | 'paint';
 
 export interface GarageVehicleRepair {
   id: number;
@@ -167,4 +185,40 @@ export interface PaginatedResponse<T> {
     per_page: number;
     total: number;
   };
+}
+
+export interface PartOrderItem {
+  id?: number;
+  reference: string | null;
+  description: string;
+  quantity: number;
+  status?: string;
+  observations?: string | null;
+}
+
+export interface PartOrder {
+  id: number;
+  repair_id: number | null;
+  vehicle_id: number | null;
+  vehicle_label: string | null;
+  supplier: string | null;
+  priority: 'low' | 'normal' | 'urgent';
+  status: string;
+  status_label: string;
+  requested_delivery_days: number | null;
+  expected_delivery_date: string | null;
+  actual_delivery_date: string | null;
+  notes: string | null;
+  created_at: string | null;
+  items: PartOrderItem[];
+  received_badge: 'chegou' | 'parcial' | 'pendente' | 'atrasado';
+}
+
+export interface PartOrderSupplier {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  nif?: string | null;
 }

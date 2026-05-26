@@ -13,6 +13,8 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonSelect,
+  IonSelectOption,
   IonSpinner,
   IonThumbnail,
   ToastController,
@@ -38,6 +40,8 @@ import { WorkshopApiService } from '../../core/services/workshop-api.service';
     IonLabel,
     IonInput,
     IonList,
+    IonSelect,
+    IonSelectOption,
     IonButton,
     IonSpinner,
     IonThumbnail,
@@ -49,6 +53,7 @@ export class NewInterventionPage {
   private readonly toast = inject(ToastController);
 
   search = '';
+  workType: 'workshop' | 'paint' = 'workshop';
   vehicles: VehicleLookup[] = [];
   loading = false;
 
@@ -69,7 +74,7 @@ export class NewInterventionPage {
   create(vehicleId: number): void {
     this.loading = true;
     this.workshopApi
-      .createIntervention(vehicleId)
+      .createIntervention(vehicleId, this.workType)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: async (res) => {

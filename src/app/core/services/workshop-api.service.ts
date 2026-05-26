@@ -5,9 +5,12 @@ import { environment } from '../../../environments/environment';
 import {
   GarageVehicle,
   PaginatedResponse,
+  PartOrder,
+  PartOrderSupplier,
   RepairDetail,
   RepairListItem,
   RepairState,
+  RepairWorkType,
   VehicleLookup,
 } from '../models/workshop.models';
 
@@ -117,7 +120,53 @@ export class WorkshopApiService {
     });
   }
 
-  createIntervention(vehicleId: number): Observable<{ data: RepairDetail }> {
-    return this.http.post<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/vehicles/${vehicleId}/interventions`, {});
+  createIntervention(vehicleId: number, workType: RepairWorkType = 'workshop'): Observable<{ data: RepairDetail }> {
+    return this.http.post<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/vehicles/${vehicleId}/interventions`, {
+      work_type: workType,
+    });
+  }
+
+  getPartOrders(search = '', status = '', page = 1, perPage = 20): Observable<PaginatedResponse<PartOrder>> {
+    return this.http.get<PaginatedResponse<PartOrder>>(`${environment.apiBaseUrl}/mobile/workshop/part-orders`, {
+      params: {
+        search,
+        status,
+        page,
+        per_page: perPage,
+      },
+    });
+  }
+
+  createPartOrder(payload: {
+    vehicle_id?: number | null;
+    repair_id?: number | null;
+    suplier_id?: number | null;
+    priority?: 'low' | 'normal' | 'urgent';
+    requested_delivery_days?: number | null;
+    expected_delivery_date?: string | null;
+    notes?: string | null;
+    items: Array<{
+      reference?: string | null;
+      description: string;
+      quantity?: number | null;
+      observations?: string | null;
+    }>;
+  }): Observable<{ data: PartOrder }> {
+    return this.http.post<{ data: PartOrder }>(`${environment.apiBaseUrl}/mobile/workshop/part-orders`, payload);
+  }
+
+  getPartOrderSuppliers(): Observable<{ data: PartOrderSupplier[] }> {
+    return this.http.get<{ data: PartOrderSupplier[] }>(`${environment.apiBaseUrl}/mobile/workshop/part-order-suppliers`);
+  }
+
+  createPartOrderSupplier(payload: {
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    mobile?: string | null;
+    nif?: string | null;
+    notes?: string | null;
+  }): Observable<{ data: PartOrderSupplier }> {
+    return this.http.post<{ data: PartOrderSupplier }>(`${environment.apiBaseUrl}/mobile/workshop/part-order-suppliers`, payload);
   }
 }

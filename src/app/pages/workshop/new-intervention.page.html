@@ -9,6 +9,13 @@
         <ion-input [(ngModel)]="search" (keyup.enter)="loadVehicles()"></ion-input>
       </ion-item>
       <ion-button expand="block" (click)="loadVehicles()" [disabled]="loading">Pesquisar</ion-button>
+      <ion-item>
+        <ion-label position="stacked">Tipo de trabalho</ion-label>
+        <ion-select interface="action-sheet" [(ngModel)]="workType">
+          <ion-select-option value="workshop">Oficina</ion-select-option>
+          <ion-select-option value="paint">Pintura</ion-select-option>
+        </ion-select>
+      </ion-item>
     </ion-card-content>
   </ion-card>
 

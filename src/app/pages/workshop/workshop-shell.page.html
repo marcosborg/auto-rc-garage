@@ -19,6 +19,10 @@
           <ion-icon name="business-outline" slot="start"></ion-icon>
           <ion-label>Viaturas em oficina</ion-label>
         </ion-item>
+        <ion-item *ngIf="canSeePartOrders()" routerLink="/workshop/part-orders" routerDirection="root" (click)="closeMenu()">
+          <ion-icon name="cart-outline" slot="start"></ion-icon>
+          <ion-label>Encomendas</ion-label>
+        </ion-item>
         <ion-item routerLink="/workshop/new-intervention" routerDirection="forward" (click)="closeMenu()">
           <ion-icon name="car-sport-outline" slot="start"></ion-icon>
           <ion-label>Nova intervenção</ion-label>

@@ -22,7 +22,7 @@ import {
   ToastController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline } from 'ionicons/icons';
+import { businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline } from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
 import { ChecklistAlertService } from '../../core/services/checklist-alert.service';
 
@@ -62,7 +62,7 @@ export class WorkshopShellPage {
   user = this.auth.user;
 
   constructor() {
-    addIcons({ businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline });
+    addIcons({ businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline });
   }
 
   openChecklistAlert(): void {
@@ -71,6 +71,12 @@ export class WorkshopShellPage {
 
   closeMenu(): void {
     this.menu.close();
+  }
+
+  canSeePartOrders(): boolean {
+    const roles = this.user()?.roles ?? [];
+
+    return roles.some((role) => ['Admin', 'Adm', 'Chefe oficina', 'Aux. oficina', 'Aux. Oficina', 'Aux. gestão', 'Gestão'].includes(role));
   }
 
   async logout(): Promise<void> {
