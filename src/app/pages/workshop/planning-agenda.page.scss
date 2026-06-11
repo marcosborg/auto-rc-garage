@@ -1,0 +1,128 @@
+.planning-content {
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --padding-top: 14px;
+  --padding-bottom: 20px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.period-bar {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.period-label {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #182437;
+  font-weight: 700;
+  text-align: center;
+}
+
+.filter-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 8px;
+}
+
+.loading-wrap {
+  display: grid;
+  place-items: center;
+  padding: 30px 0;
+}
+
+.planning-card {
+  margin: 12px 0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(22, 35, 54, 0.08);
+}
+
+.planning-card.in-progress {
+  border-left: 4px solid var(--ion-color-primary);
+}
+
+.planning-card.overdue {
+  border-left: 4px solid var(--ion-color-danger);
+}
+
+.planning-card ion-card-content {
+  padding: 12px;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card-top h3,
+.card-title {
+  margin: 0;
+  color: #182437;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.card-top p {
+  margin: 4px 0 0;
+  color: #5a6676;
+  font-size: 0.86rem;
+}
+
+.card-title {
+  margin-top: 10px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: #6b7686;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.running-label,
+.overdue-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.running-label {
+  color: var(--ion-color-primary);
+}
+
+.overdue-label {
+  color: var(--ion-color-danger);
+}
+
+.empty-state {
+  --padding-start: 0;
+  color: #6b7686;
+}

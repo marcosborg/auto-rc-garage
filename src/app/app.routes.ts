@@ -22,6 +22,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/workshop/repair-detail.page').then((m) => m.RepairDetailPage),
       },
       {
+        path: 'planning',
+        loadComponent: () => import('./pages/workshop/planning-agenda.page').then((m) => m.PlanningAgendaPage),
+      },
+      {
+        path: 'planning/:id',
+        loadComponent: () => import('./pages/workshop/planning-intervention-detail.page').then((m) => m.PlanningInterventionDetailPage),
+      },
+      {
         path: 'new-intervention',
         loadComponent: () => import('./pages/workshop/new-intervention.page').then((m) => m.NewInterventionPage),
       },

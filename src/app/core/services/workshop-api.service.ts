@@ -7,6 +7,9 @@ import {
   PaginatedResponse,
   PartOrder,
   PartOrderSupplier,
+  PlanningIntervention,
+  PlanningInterventionStatus,
+  PlanningInterventionType,
   RepairDetail,
   RepairListItem,
   RepairState,
@@ -16,6 +19,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class WorkshopApiService {
+  private readonly planningBaseUrl = `${environment.apiBaseUrl}/mobile/workshop/planning`;
+
   constructor(private readonly http: HttpClient) {}
 
   getRepairStates(): Observable<RepairState[]> {
@@ -63,6 +68,45 @@ export class WorkshopApiService {
 
   finishMyWork(id: number): Observable<{ data: RepairDetail }> {
     return this.http.post<{ data: RepairDetail }>(`${environment.apiBaseUrl}/mobile/workshop/repairs/${id}/work/finish`, {});
+  }
+
+  getMyPlanningAgenda(params: {
+    start_date: string;
+    end_date: string;
+    status?: PlanningInterventionStatus | '';
+  }): Observable<{ data: PlanningIntervention[] }> {
+    const queryParams: Record<string, string> = {
+      start_date: params.start_date,
+      end_date: params.end_date,
+    };
+
+    if (params.status) {
+      queryParams['status'] = params.status;
+    }
+
+    return this.http.get<{ data: PlanningIntervention[] }>(`${this.planningBaseUrl}/my-agenda`, {
+      params: queryParams,
+    });
+  }
+
+  getPlanningIntervention(id: number): Observable<{ data: PlanningIntervention }> {
+    return this.http.get<{ data: PlanningIntervention }>(`${this.planningBaseUrl}/interventions/${id}`);
+  }
+
+  startPlanningIntervention(id: number): Observable<{ data: PlanningIntervention }> {
+    return this.http.post<{ data: PlanningIntervention }>(`${this.planningBaseUrl}/interventions/${id}/start`, {});
+  }
+
+  finishPlanningIntervention(id: number): Observable<{ data: PlanningIntervention }> {
+    return this.http.post<{ data: PlanningIntervention }>(`${this.planningBaseUrl}/interventions/${id}/finish`, {});
+  }
+
+  completePlanningIntervention(id: number): Observable<{ data: PlanningIntervention }> {
+    return this.http.post<{ data: PlanningIntervention }>(`${this.planningBaseUrl}/interventions/${id}/complete`, {});
+  }
+
+  getPlanningTypes(): Observable<{ data: PlanningInterventionType[] }> {
+    return this.http.get<{ data: PlanningInterventionType[] }>(`${this.planningBaseUrl}/types`);
   }
 
   addPart(

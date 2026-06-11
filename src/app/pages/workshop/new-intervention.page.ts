@@ -53,7 +53,7 @@ export class NewInterventionPage {
   private readonly toast = inject(ToastController);
 
   search = '';
-  workType: 'workshop' | 'paint' = 'workshop';
+  workType: 'workshop' | 'painting' = 'workshop';
   vehicles: VehicleLookup[] = [];
   loading = false;
 

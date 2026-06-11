@@ -1,0 +1,78 @@
+<ion-content class="planning-content">
+  <div class="page-header">
+    <h2>Planificação</h2>
+    <ion-button size="small" fill="outline" (click)="goToday()">Hoje</ion-button>
+  </div>
+
+  <ion-segment [value]="mode" (ionChange)="onModeChange($event.detail.value)">
+    <ion-segment-button value="day"><ion-label>Dia</ion-label></ion-segment-button>
+    <ion-segment-button value="week"><ion-label>Semana</ion-label></ion-segment-button>
+  </ion-segment>
+
+  <div class="period-bar">
+    <ion-button fill="clear" size="small" aria-label="Periodo anterior" (click)="previousPeriod()">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </ion-button>
+    <div class="period-label">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span>{{ periodLabel() }}</span>
+    </div>
+    <ion-button fill="clear" size="small" aria-label="Periodo seguinte" (click)="nextPeriod()">
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </ion-button>
+  </div>
+
+  <ion-item class="filter-item">
+    <ion-label>Estado</ion-label>
+    <ion-select interface="action-sheet" [value]="status" (ionChange)="onStatusChange($event.detail.value)">
+      <ion-select-option value="">Todos</ion-select-option>
+      <ion-select-option value="planned">Planeado</ion-select-option>
+      <ion-select-option value="in_progress">Em curso</ion-select-option>
+      <ion-select-option value="completed">Concluído</ion-select-option>
+      <ion-select-option value="cancelled">Cancelado</ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <ion-card
+      class="planning-card"
+      *ngFor="let intervention of interventions; trackBy: trackByIntervention"
+      [ngClass]="cardClass(intervention)"
+      button
+      (click)="openIntervention(intervention)"
+    >
+      <ion-card-content>
+        <div class="card-top">
+          <div>
+            <h3>{{ intervention.vehicle.license || ('Viatura #' + intervention.vehicle.id) }}</h3>
+            <p>{{ intervention.type.name }}</p>
+          </div>
+          <ion-badge [color]="statusColor(intervention)">{{ intervention.status_label }}</ion-badge>
+        </div>
+
+        <div class="card-title">{{ intervention.title }}</div>
+
+        <div class="card-meta">
+          <span>{{ periodRange(intervention) }}</span>
+          <span *ngIf="intervention.my_work_in_progress" class="running-label">
+            <ion-icon name="time-outline"></ion-icon>
+            Em curso
+          </span>
+          <span *ngIf="isOverdue(intervention)" class="overdue-label">Atrasado</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-item *ngIf="interventions.length === 0" lines="none" class="empty-state">
+      <ion-label>Sem trabalhos planeados para este período.</ion-label>
+    </ion-item>
+  </ng-container>
+</ion-content>

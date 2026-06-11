@@ -92,7 +92,7 @@ export interface MechanicTotal {
 
 export interface RepairDetail {
   id: number;
-  work_type: 'workshop' | 'paint';
+  work_type: RepairWorkType;
   vehicle: {
     id: number;
     license: string | null;
@@ -153,7 +153,53 @@ export interface VehicleLookup {
   cover_photo: RepairMedia | null;
 }
 
-export type RepairWorkType = 'workshop' | 'paint';
+export type RepairWorkType = 'workshop' | 'painting';
+
+export type PlanningInterventionStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface PlanningInterventionType {
+  id: number;
+  name: string;
+  is_active: boolean;
+}
+
+export interface PlanningMechanic {
+  id: number;
+  name: string;
+  email?: string | null;
+}
+
+export interface PlanningWorkLog {
+  id: number;
+  user_id: number;
+  user_name: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  duration_minutes: number;
+}
+
+export interface PlanningIntervention {
+  id: number;
+  repair_id: number;
+  vehicle: {
+    id: number;
+    license: string | null;
+  };
+  type: {
+    id: number;
+    name: string;
+  };
+  title: string;
+  description: string | null;
+  planned_start_date: string | null;
+  planned_end_date: string | null;
+  status: PlanningInterventionStatus;
+  status_label: string;
+  mechanics: PlanningMechanic[];
+  work_logs: PlanningWorkLog[];
+  my_work_in_progress: boolean;
+  completed_at: string | null;
+}
 
 export interface GarageVehicleRepair {
   id: number;

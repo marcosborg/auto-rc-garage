@@ -1,0 +1,87 @@
+<ion-content class="detail-content">
+  <div *ngIf="loading" class="loading-wrap">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && intervention as item">
+    <ion-card class="hero-card" [class.running]="item.my_work_in_progress">
+      <ion-card-header>
+        <div class="title-row">
+          <div>
+            <ion-card-title>{{ vehicleLabel(item) }}</ion-card-title>
+            <ion-card-subtitle>{{ item.type.name }} - Trabalho #{{ item.id }}</ion-card-subtitle>
+          </div>
+          <ion-badge [color]="statusColor(item)">{{ item.status_label }}</ion-badge>
+        </div>
+      </ion-card-header>
+      <ion-card-content>
+        <h2>{{ item.title }}</h2>
+        <p class="description">{{ item.description || 'Sem descrição.' }}</p>
+
+        <div class="info-grid">
+          <div>
+            <strong>Período</strong>
+            <span>{{ periodLabel(item) }}</span>
+          </div>
+          <div>
+            <strong>Reparação</strong>
+            <span>#{{ item.repair_id }}</span>
+          </div>
+          <div>
+            <strong>O meu tempo</strong>
+            <span>{{ formatMinutes(myTotalMinutes) }}</span>
+          </div>
+          <div>
+            <strong>Concluído em</strong>
+            <span>{{ formatDateTime(item.completed_at) }}</span>
+          </div>
+        </div>
+
+        <div class="action-error" *ngIf="actionError">{{ actionError }}</div>
+
+        <div class="action-grid">
+          <ion-button *ngIf="canStart" size="small" (click)="startWork()" [disabled]="submitting">Iniciar trabalho</ion-button>
+          <ion-button *ngIf="canFinish" size="small" color="dark" (click)="finishWork()" [disabled]="submitting">Terminar tempo</ion-button>
+          <ion-button *ngIf="canComplete" size="small" color="success" (click)="confirmComplete()" [disabled]="submitting">Concluir trabalho</ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Equipa</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let mechanic of item.mechanics; trackBy: trackByMechanic">
+            <ion-label>{{ mechanic.name }}</ion-label>
+          </ion-item>
+          <ion-item *ngIf="item.mechanics.length === 0" lines="none">
+            <ion-label>Sem mecânicos atribuídos.</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Registos de tempo</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let log of item.work_logs; trackBy: trackByWorkLog">
+            <ion-label>
+              <h3>{{ log.user_name || ('Utilizador #' + log.user_id) }}</h3>
+              <p>{{ formatDateTime(log.started_at) }} - {{ formatDateTime(log.finished_at) }}</p>
+              <p>{{ formatMinutes(logDurationMinutes(log)) }}</p>
+            </ion-label>
+            <ion-badge *ngIf="!log.finished_at" color="primary">Aberto</ion-badge>
+          </ion-item>
+          <ion-item *ngIf="item.work_logs.length === 0" lines="none">
+            <ion-label>Sem tempos registados.</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </ng-container>
+</ion-content>
