@@ -22,7 +22,7 @@ import {
   ToastController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline } from 'ionicons/icons';
+import { businessOutline, calendarOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline } from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
 import { ChecklistAlertService } from '../../core/services/checklist-alert.service';
 
@@ -62,7 +62,7 @@ export class WorkshopShellPage {
   user = this.auth.user;
 
   constructor() {
-    addIcons({ businessOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline });
+    addIcons({ businessOutline, calendarOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline });
   }
 
   openChecklistAlert(): void {
@@ -112,4 +112,3 @@ export class WorkshopShellPage {
     await alert.present();
   }
 }
-
