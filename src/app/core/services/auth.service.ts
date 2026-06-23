@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -7,12 +7,10 @@ import { TokenStorageService } from './token-storage.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  readonly user = signal<MobileUser | null>(this.storage.getUser<MobileUser>());
+  private readonly http = inject(HttpClient);
+  private readonly storage = inject(TokenStorageService);
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly storage: TokenStorageService,
-  ) {}
+  readonly user = signal<MobileUser | null>(this.storage.getUser<MobileUser>());
 
   login(email: string, password: string): Observable<MobileUser> {
     return this.http

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -19,9 +19,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class WorkshopApiService {
+  private readonly http = inject(HttpClient);
   private readonly planningBaseUrl = `${environment.apiBaseUrl}/mobile/workshop/planning`;
-
-  constructor(private readonly http: HttpClient) {}
 
   getRepairStates(): Observable<RepairState[]> {
     return this.http.get<RepairState[]>(`${environment.apiBaseUrl}/mobile/workshop/repair-states`);
