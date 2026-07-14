@@ -296,6 +296,17 @@ export class RepairDetailPage implements AfterViewChecked, OnDestroy {
     return this.repair.work_logs.some((log) => Number(log.user_id) === Number(userId) && !log.finished_at);
   }
 
+  get hasMyOpenGeneralWork(): boolean {
+    const userId = this.auth.user()?.id;
+    if (!userId || !this.repair) {
+      return false;
+    }
+
+    return this.repair.work_logs.some(
+      (log) => Number(log.user_id) === Number(userId) && !log.finished_at && !log.workshop_intervention_id,
+    );
+  }
+
   get hasMyFinishedWork(): boolean {
     const userId = this.auth.user()?.id;
     if (!userId || !this.repair) {
@@ -314,7 +325,7 @@ export class RepairDetailPage implements AfterViewChecked, OnDestroy {
   }
 
   get canFinishMyWork(): boolean {
-    return !!this.repair && this.repairStarted && !this.repairFinished && this.hasMyOpenWork;
+    return !!this.repair && this.repairStarted && !this.repairFinished && this.hasMyOpenGeneralWork;
   }
 
   get canFinishRepair(): boolean {
@@ -1182,7 +1193,6 @@ export class RepairDetailPage implements AfterViewChecked, OnDestroy {
     await toast.present();
   }
 }
-
 
 
 

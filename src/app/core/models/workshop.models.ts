@@ -18,6 +18,7 @@ export interface RepairListItem {
   repair_finished_at: string | null;
   repair_duration_minutes: number | null;
   cover_photo: RepairMedia | null;
+  active_mechanics: ActiveMechanic[];
   vehicle?: {
     initial_photos?: RepairMedia[];
   };
@@ -39,6 +40,7 @@ export interface RepairPart {
 
 export interface RepairWorkLog {
   id: number;
+  workshop_intervention_id: number | null;
   user_id: number;
   user_name: string | null;
   started_at: string | null;
@@ -90,6 +92,11 @@ export interface MechanicTotal {
   minutes: number;
 }
 
+export interface ActiveMechanic {
+  id: number;
+  name: string;
+}
+
 export interface RepairDetail {
   id: number;
   work_type: RepairWorkType;
@@ -139,6 +146,7 @@ export interface RepairDetail {
   work_logs: RepairWorkLog[];
   work_total_minutes: number;
   mechanic_totals: MechanicTotal[];
+  active_mechanics: ActiveMechanic[];
   can_create_new_intervention: boolean;
   vehicle_repairs: RepairHistoryItem[];
   part_orders: PartOrderHistoryItem[];
@@ -196,6 +204,7 @@ export interface PlanningIntervention {
   status: PlanningInterventionStatus;
   status_label: string;
   mechanics: PlanningMechanic[];
+  active_mechanics: ActiveMechanic[];
   work_logs: PlanningWorkLog[];
   my_work_in_progress: boolean;
   completed_at: string | null;

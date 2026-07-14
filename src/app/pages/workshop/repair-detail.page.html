@@ -10,6 +10,10 @@
         <ion-badge color="warning">Mao de obra: {{ formatMinutes(r.work_total_minutes) }}</ion-badge>
         <ion-badge color="tertiary">Peças e serviços: {{ r.parts_total | number:'1.2-2' }} EUR</ion-badge>
       </div>
+      <p *ngIf="r.active_mechanics.length" class="active-mechanics">
+        Em intervenção:
+        <ng-container *ngFor="let mechanic of r.active_mechanics; let last = last">{{ mechanic.name }}<ng-container *ngIf="!last">, </ng-container></ng-container>
+      </p>
       <ion-progress-bar [value]="checklistProgress"></ion-progress-bar>
 
       <div class="control-card">
@@ -465,5 +469,4 @@
     </ion-content>
   </ng-template>
 </ion-modal>
-
 

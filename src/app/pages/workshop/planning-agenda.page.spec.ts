@@ -75,6 +75,15 @@ describe('PlanningAgendaPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Sem trabalhos planeados para este período.');
   });
 
+  it('shows the mechanics currently working on an intervention', () => {
+    component.interventions = [planningIntervention({ active_mechanics: [{ id: 7, name: 'Marco' }] })];
+    component.loading = false;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Em intervenção:');
+    expect(fixture.nativeElement.textContent).toContain('Marco');
+  });
+
   it('patches a loaded intervention when detail emits an update', () => {
     const sync = TestBed.inject(PlanningSyncService);
     component.interventions = [planningIntervention({ id: 10, title: 'Diagnóstico' })];
@@ -125,6 +134,7 @@ function planningIntervention(overrides: Partial<PlanningIntervention> = {}): Pl
     status: 'planned',
     status_label: 'Planeado',
     mechanics: [{ id: 7, name: 'Marco' }],
+    active_mechanics: [],
     work_logs: [],
     my_work_in_progress: false,
     completed_at: null,

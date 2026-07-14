@@ -64,12 +64,16 @@ describe('PlanningInterventionDetailPage', () => {
 
   it('loads and renders intervention detail', () => {
     component.load();
-    httpMock.expectOne(`${baseUrl}/interventions/10`).flush({ data: planningIntervention() });
+    httpMock.expectOne(`${baseUrl}/interventions/10`).flush({
+      data: planningIntervention({ active_mechanics: [{ id: 7, name: 'Marco' }] }),
+    });
     fixture.detectChanges();
 
     expect(component.intervention?.title).toBe('Diagnóstico');
     expect(fixture.nativeElement.textContent).toContain('AA-11-BB');
     expect(fixture.nativeElement.textContent).toContain('Diagnóstico');
+    expect(fixture.nativeElement.textContent).toContain('Em intervenção:');
+    expect(fixture.nativeElement.textContent).toContain('Marco');
   });
 
   it('starts the mechanic timer and emits the updated intervention', () => {
@@ -174,6 +178,7 @@ function planningIntervention(overrides: Partial<PlanningIntervention> = {}): Pl
     status: 'planned',
     status_label: 'Planeado',
     mechanics: [{ id: 7, name: 'Marco' }],
+    active_mechanics: [],
     work_logs: [
       {
         id: 100,

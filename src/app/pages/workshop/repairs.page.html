@@ -46,6 +46,10 @@
             </div>
 
             <p>#{{ repair.id }} - {{ repair.state }}</p>
+            <p *ngIf="repair.active_mechanics.length" class="active-mechanics">
+              Em intervenção:
+              <ng-container *ngFor="let mechanic of repair.active_mechanics; let last = last">{{ mechanic.name }}<ng-container *ngIf="!last">, </ng-container></ng-container>
+            </p>
 
             <div class="repair-meta">
               <span>{{ formatListDate(repair.timestamp) }}</span>

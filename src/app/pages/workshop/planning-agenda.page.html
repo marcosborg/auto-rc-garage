@@ -60,6 +60,11 @@
 
         <div class="card-title">{{ intervention.title }}</div>
 
+        <div *ngIf="intervention.active_mechanics.length" class="running-label">
+          Em intervenção:
+          <ng-container *ngFor="let mechanic of intervention.active_mechanics; let last = last">{{ mechanic.name }}<ng-container *ngIf="!last">, </ng-container></ng-container>
+        </div>
+
         <div class="card-meta">
           <span>{{ periodRange(intervention) }}</span>
           <span *ngIf="intervention.my_work_in_progress" class="running-label">

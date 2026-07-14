@@ -17,6 +17,10 @@
       <ion-card-content>
         <h2>{{ item.title }}</h2>
         <p class="description">{{ item.description || 'Sem descrição.' }}</p>
+        <p *ngIf="item.active_mechanics.length" class="running-label">
+          Em intervenção:
+          <ng-container *ngFor="let mechanic of item.active_mechanics; let last = last">{{ mechanic.name }}<ng-container *ngIf="!last">, </ng-container></ng-container>
+        </p>
 
         <div class="info-grid">
           <div>
