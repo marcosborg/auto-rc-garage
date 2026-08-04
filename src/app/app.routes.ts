@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { landingGuard } from './core/guards/landing.guard';
 
 export const routes: Routes = [
   {
@@ -13,6 +14,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/workshop/workshop-shell.page').then((m) => m.WorkshopShellPage),
     canActivate: [authGuard],
     children: [
+      {
+        path: 'painting',
+        loadComponent: () => import('./pages/workshop/painting-jobs.page').then((m) => m.PaintingJobsPage),
+      },
+      {
+        path: 'painting/:id',
+        loadComponent: () => import('./pages/workshop/painting-job-detail.page').then((m) => m.PaintingJobDetailPage),
+      },
       {
         path: 'repairs',
         loadComponent: () => import('./pages/workshop/repairs.page').then((m) => m.RepairsPage),
@@ -51,10 +60,12 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'workshop/repairs',
+    canActivate: [landingGuard],
+    loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
   },
   {
     path: '**',
-    redirectTo: 'workshop/repairs',
+    canActivate: [landingGuard],
+    loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
   },
 ];

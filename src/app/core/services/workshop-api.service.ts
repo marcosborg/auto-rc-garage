@@ -7,6 +7,10 @@ import {
   PaginatedResponse,
   PartOrder,
   PartOrderSupplier,
+  PaintingJob,
+  PaintingJobPayload,
+  PaintingJobStatus,
+  PaintingJobSummary,
   PlanningIntervention,
   PlanningInterventionStatus,
   PlanningInterventionType,
@@ -21,6 +25,23 @@ import {
 export class WorkshopApiService {
   private readonly http = inject(HttpClient);
   private readonly planningBaseUrl = `${environment.apiBaseUrl}/mobile/workshop/planning`;
+  private readonly paintingBaseUrl = `${environment.apiBaseUrl}/mobile/workshop/painting-jobs`;
+
+  getPaintingJobs(status?: PaintingJobStatus): Observable<{ data: PaintingJobSummary[] }> {
+    return this.http.get<{ data: PaintingJobSummary[] }>(this.paintingBaseUrl, { params: status ? { status } : {} });
+  }
+
+  getPaintingJob(id: number): Observable<{ data: PaintingJob }> {
+    return this.http.get<{ data: PaintingJob }>(`${this.paintingBaseUrl}/${id}`);
+  }
+
+  updatePaintingJob(id: number, payload: PaintingJobPayload): Observable<{ data: PaintingJob }> {
+    return this.http.put<{ data: PaintingJob }>(`${this.paintingBaseUrl}/${id}`, payload);
+  }
+
+  completePaintingJob(id: number, payload: PaintingJobPayload): Observable<{ data: PaintingJob }> {
+    return this.http.post<{ data: PaintingJob }>(`${this.paintingBaseUrl}/${id}/complete`, payload);
+  }
 
   getRepairStates(): Observable<RepairState[]> {
     return this.http.get<RepairState[]>(`${environment.apiBaseUrl}/mobile/workshop/repair-states`);

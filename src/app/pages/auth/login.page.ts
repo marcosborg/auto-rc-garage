@@ -66,8 +66,11 @@ export class LoginPage {
       .login(email ?? '', password ?? '')
       .pipe(finalize(() => (this.isLoading = false)))
       .subscribe({
-        next: () => {
-          this.router.navigateByUrl('/workshop/repairs', { replaceUrl: true });
+        next: (user) => {
+          const destination = user.permissions.includes('painting_job_access') && !user.permissions.includes('repair_access')
+            ? '/workshop/painting'
+            : '/workshop/repairs';
+          this.router.navigateByUrl(destination, { replaceUrl: true });
         },
         error: async (err) => {
           const toast = await this.toast.create({

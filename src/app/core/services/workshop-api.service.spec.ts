@@ -69,4 +69,29 @@ describe('WorkshopApiService planning', () => {
     expect(completeReq.request.method).toBe('POST');
     completeReq.flush({ data: {} });
   });
+
+  it('loads painting jobs with the selected status', () => {
+    service.getPaintingJobs('open').subscribe();
+    const req = httpMock.expectOne((request) => request.url.endsWith('/mobile/workshop/painting-jobs'));
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('status')).toBe('open');
+    req.flush({ data: [] });
+  });
+
+  it('updates and completes a painting job with the form payload', () => {
+    const payload = { damages: [{ zone: 'hood', intensity: 'light' as const }], materials: [], optics: null, black_parts: null, wheels: null, other_work: null, notes: null };
+    const paintingUrl = `${environment.apiBaseUrl}/mobile/workshop/painting-jobs/7`;
+
+    service.updatePaintingJob(7, payload).subscribe();
+    const updateReq = httpMock.expectOne(paintingUrl);
+    expect(updateReq.request.method).toBe('PUT');
+    expect(updateReq.request.body).toEqual(payload);
+    updateReq.flush({ data: {} });
+
+    service.completePaintingJob(7, payload).subscribe();
+    const completeReq = httpMock.expectOne(`${paintingUrl}/complete`);
+    expect(completeReq.request.method).toBe('POST');
+    expect(completeReq.request.body).toEqual(payload);
+    completeReq.flush({ data: {} });
+  });
 });

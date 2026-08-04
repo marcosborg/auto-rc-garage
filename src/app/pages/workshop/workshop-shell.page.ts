@@ -22,7 +22,7 @@ import {
   ToastController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { businessOutline, calendarOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline } from 'ionicons/icons';
+import { businessOutline, calendarOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline, colorPaletteOutline } from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
 import { ChecklistAlertService } from '../../core/services/checklist-alert.service';
 
@@ -62,7 +62,7 @@ export class WorkshopShellPage {
   user = this.auth.user;
 
   constructor() {
-    addIcons({ businessOutline, calendarOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline });
+    addIcons({ businessOutline, calendarOutline, carSportOutline, listOutline, logOutOutline, notificationsOutline, cartOutline, colorPaletteOutline });
   }
 
   openChecklistAlert(): void {
@@ -77,6 +77,14 @@ export class WorkshopShellPage {
     const roles = this.user()?.roles ?? [];
 
     return roles.some((role) => ['Admin', 'Adm', 'Chefe oficina', 'Aux. oficina', 'Aux. Oficina', 'Aux. gestão', 'Gestão'].includes(role));
+  }
+
+  canSeePainting(): boolean {
+    return this.user()?.permissions?.includes('painting_job_access') ?? false;
+  }
+
+  hasPermission(permission: string): boolean {
+    return this.user()?.permissions?.includes(permission) ?? false;
   }
 
   async logout(): Promise<void> {

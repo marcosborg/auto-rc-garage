@@ -1,0 +1,15 @@
+<ion-content class="painting-list">
+  <div class="page-heading"><div><h2>Minhas pinturas</h2><p>Fichas atribuídas ao operador</p></div></div>
+  <ion-segment [value]="status" (ionChange)="setStatus($event.detail.value)">
+    <ion-segment-button value="open"><ion-label>Abertas</ion-label></ion-segment-button>
+    <ion-segment-button value="completed"><ion-label>Concluídas</ion-label></ion-segment-button>
+  </ion-segment>
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)"><ion-refresher-content></ion-refresher-content></ion-refresher>
+  <div class="loading" *ngIf="loading"><ion-spinner></ion-spinner></div>
+  <ion-card *ngFor="let job of jobs" button (click)="open(job)">
+    <ion-card-content><div class="title-row"><div><h3>{{ job.license || 'Sem matrícula' }}</h3><p>{{ job.brand_model || 'Viatura' }}</p></div><ion-badge [color]="job.status === 'completed' ? 'success' : 'warning'">{{ job.status_label }}</ion-badge></div>
+      <div class="meta"><span>Entrada: {{ formatDate(job.entry_date) }}</span><span>{{ job.painter?.name || 'Por atribuir' }}</span></div>
+    </ion-card-content>
+  </ion-card>
+  <ion-item *ngIf="!loading && jobs.length === 0" lines="none"><ion-label>Nenhuma ficha {{ status === 'open' ? 'aberta' : 'concluída' }}.</ion-label></ion-item>
+</ion-content>

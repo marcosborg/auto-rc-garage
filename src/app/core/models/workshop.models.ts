@@ -170,7 +170,61 @@ export interface VehicleLookup {
   cover_photo: RepairMedia | null;
 }
 
-export type RepairWorkType = 'workshop' | 'painting';
+export type RepairWorkType = 'workshop';
+
+export type PaintingJobStatus = 'open' | 'completed';
+export type PaintingIntensity = 'light' | 'medium' | 'heavy';
+
+export interface PaintingDamage {
+  zone: string;
+  label: string;
+  intensity: PaintingIntensity | null;
+}
+
+export interface PaintingMaterial {
+  id?: number;
+  material_type: string;
+  reference: string | null;
+  quantity: number | null;
+  used_date: string | null;
+  hours: number | null;
+}
+
+export interface PaintingJobSummary {
+  id: number;
+  status: PaintingJobStatus;
+  status_label: string;
+  license: string | null;
+  brand_model: string | null;
+  entry_date: string | null;
+  exit_date: string | null;
+  painter: { id: number; name: string } | null;
+}
+
+export interface PaintingJob extends PaintingJobSummary {
+  vehicle: { id: number; license: string | null; brand_model: string | null };
+  client_contact: string | null;
+  operator: string | null;
+  damages: PaintingDamage[];
+  intensity_options: Record<PaintingIntensity, string>;
+  materials: PaintingMaterial[];
+  optics: string | null;
+  black_parts: string | null;
+  wheels: string | null;
+  other_work: string | null;
+  notes: string | null;
+  completed_at: string | null;
+}
+
+export interface PaintingJobPayload {
+  damages: Array<{ zone: string; intensity: PaintingIntensity | null }>;
+  materials: PaintingMaterial[];
+  optics: string | null;
+  black_parts: string | null;
+  wheels: string | null;
+  other_work: string | null;
+  notes: string | null;
+}
 
 export type PlanningInterventionStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';
 
