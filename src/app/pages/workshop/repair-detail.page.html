@@ -406,11 +406,24 @@
           </ion-item>
         </ion-list>
 
+        <h3>Tempos por tarefa e mecanico</h3>
+        <ion-list>
+          <ion-item *ngFor="let intervention of r.intervention_totals">
+            <ion-label>
+              <h3>{{ intervention.title }}</h3>
+              <p *ngFor="let mechanic of intervention.mechanics">
+                {{ mechanic.name }}: {{ formatMinutes(mechanic.minutes) }}
+              </p>
+              <p><strong>Total da tarefa: {{ formatMinutes(intervention.total_minutes) }}</strong></p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+
         <h3>Registos de trabalho</h3>
         <ion-list>
           <ion-item *ngFor="let log of r.work_logs">
             <ion-label>
-              <h3>{{ log.user_name || ('Utilizador #' + log.user_id) }}</h3>
+              <h3>{{ log.intervention_title }} — {{ log.user_name || ('Utilizador #' + log.user_id) }}</h3>
               <p>{{ log.started_at || '-' }} -> {{ log.finished_at || 'Em curso' }} ({{ formatMinutes(log.duration_minutes) }})</p>
             </ion-label>
           </ion-item>
@@ -469,4 +482,3 @@
     </ion-content>
   </ng-template>
 </ion-modal>
-

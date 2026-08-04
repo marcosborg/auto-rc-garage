@@ -41,6 +41,7 @@ export interface RepairPart {
 export interface RepairWorkLog {
   id: number;
   workshop_intervention_id: number | null;
+  intervention_title: string;
   user_id: number;
   user_name: string | null;
   started_at: string | null;
@@ -90,6 +91,13 @@ export interface MechanicTotal {
   user_id: number;
   name: string;
   minutes: number;
+}
+
+export interface InterventionTotal {
+  workshop_intervention_id: number | null;
+  title: string;
+  mechanics: MechanicTotal[];
+  total_minutes: number;
 }
 
 export interface ActiveMechanic {
@@ -146,6 +154,7 @@ export interface RepairDetail {
   work_logs: RepairWorkLog[];
   work_total_minutes: number;
   mechanic_totals: MechanicTotal[];
+  intervention_totals: InterventionTotal[];
   active_mechanics: ActiveMechanic[];
   can_create_new_intervention: boolean;
   vehicle_repairs: RepairHistoryItem[];
@@ -206,6 +215,8 @@ export interface PlanningIntervention {
   mechanics: PlanningMechanic[];
   active_mechanics: ActiveMechanic[];
   work_logs: PlanningWorkLog[];
+  mechanic_totals: MechanicTotal[];
+  work_total_minutes: number;
   my_work_in_progress: boolean;
   completed_at: string | null;
 }

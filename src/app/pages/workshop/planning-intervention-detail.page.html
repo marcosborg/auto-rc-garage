@@ -36,6 +36,10 @@
             <span>{{ formatMinutes(myTotalMinutes) }}</span>
           </div>
           <div>
+            <strong>Total da equipa</strong>
+            <span>{{ formatMinutes(item.work_total_minutes) }}</span>
+          </div>
+          <div>
             <strong>Concluído em</strong>
             <span>{{ formatDateTime(item.completed_at) }}</span>
           </div>
@@ -69,9 +73,21 @@
 
     <ion-card>
       <ion-card-header>
-        <ion-card-title>Registos de tempo</ion-card-title>
+        <ion-card-title>Tempos por mecânico</ion-card-title>
       </ion-card-header>
       <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let total of item.mechanic_totals">
+            <ion-label>{{ total.name }}</ion-label>
+            <ion-badge color="medium">{{ formatMinutes(total.minutes) }}</ion-badge>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-label><strong>Total da tarefa</strong></ion-label>
+            <ion-badge color="warning">{{ formatMinutes(item.work_total_minutes) }}</ion-badge>
+          </ion-item>
+        </ion-list>
+
+        <h3>Registos individuais</h3>
         <ion-list>
           <ion-item *ngFor="let log of item.work_logs; trackBy: trackByWorkLog">
             <ion-label>

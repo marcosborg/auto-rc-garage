@@ -189,6 +189,8 @@ function planningIntervention(overrides: Partial<PlanningIntervention> = {}): Pl
         duration_minutes: 60,
       },
     ],
+    mechanic_totals: [{ user_id: 7, name: 'Marco', minutes: 60 }],
+    work_total_minutes: 60,
     my_work_in_progress: false,
     completed_at: null,
     ...overrides,

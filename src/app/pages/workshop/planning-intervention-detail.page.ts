@@ -130,7 +130,7 @@ export class PlanningInterventionDetailPage implements OnDestroy {
 
     const alert = await this.alert.create({
       header: 'Concluir trabalho?',
-      message: 'Esta ação conclui o trabalho para toda a equipa e fecha todos os cronómetros abertos deste trabalho.',
+      message: 'Esta ação termina o seu cronómetro. A tarefa só fica concluída quando os restantes mecânicos já tiverem terminado os respetivos tempos.',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

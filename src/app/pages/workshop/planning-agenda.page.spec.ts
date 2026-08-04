@@ -136,6 +136,8 @@ function planningIntervention(overrides: Partial<PlanningIntervention> = {}): Pl
     mechanics: [{ id: 7, name: 'Marco' }],
     active_mechanics: [],
     work_logs: [],
+    mechanic_totals: [],
+    work_total_minutes: 0,
     my_work_in_progress: false,
     completed_at: null,
     ...overrides,
